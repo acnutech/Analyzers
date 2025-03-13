@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using Microsoft.CodeAnalysis;
@@ -20,7 +21,7 @@ namespace RefParameterAnalyzer
         private static readonly LocalizableString Title = new LocalizableResourceString(nameof(Resources.AnalyzerTitle), Resources.ResourceManager, typeof(Resources));
         private static readonly LocalizableString MessageFormat = new LocalizableResourceString(nameof(Resources.AnalyzerMessageFormat), Resources.ResourceManager, typeof(Resources));
         private static readonly LocalizableString Description = new LocalizableResourceString(nameof(Resources.AnalyzerDescription), Resources.ResourceManager, typeof(Resources));
-        private const string Category = "Naming";
+        private const string Category = "Usage";
 
         private static readonly DiagnosticDescriptor Rule = new DiagnosticDescriptor(DiagnosticId, Title, MessageFormat, Category, DiagnosticSeverity.Warning, isEnabledByDefault: true, description: Description);
 
@@ -33,11 +34,46 @@ namespace RefParameterAnalyzer
 
             // TODO: Consider registering other actions that act on syntax instead of or in addition to symbols
             // See https://github.com/dotnet/roslyn/blob/main/docs/analyzers/Analyzer%20Actions%20Semantics.md for more information
-            context.RegisterSymbolAction(AnalyzeSymbol, SymbolKind.NamedType);
+            //context.RegisterSymbolAction(AnalyzeSymbol, SymbolKind.NamedType);
+            context.RegisterSyntaxNodeAction(AnalyzeMethod, SyntaxKind.Parameter);
+        }
+
+        private void AnalyzeMethod(SyntaxNodeAnalysisContext context)
+        {
+            //Debugger.Break();
+            // https://github.com/PacktPublishing/Roslyn-Cookbook/blob/master/Chapter03/CodeSamples/Recipe%204%20-%20CodeRefactoringProvider/CodeRefactoring.zip
+            ParameterSyntax parameterSyntax = (ParameterSyntax)context.Node;
+            var pos = parameterSyntax.Modifiers.IndexOf(SyntaxKind.RefKeyword);
+            if (pos < 0)
+            {
+                return;
+            }
+
+            try
+            {
+                // Perform data flow analysis on the parameter.
+                var method = parameterSyntax.FirstAncestorOrSelf<MethodDeclarationSyntax>();
+                DataFlowAnalysis dataFlowAnalysis = context.SemanticModel.AnalyzeDataFlow(method.Body);
+
+                ISymbol parameterSymbol = context.SemanticModel.GetDeclaredSymbol(parameterSyntax, context.CancellationToken);
+                if (dataFlowAnalysis.WrittenInside.Contains(parameterSymbol))
+                {
+                    return;
+                }
+
+                context.ReportDiagnostic(Diagnostic.Create(Rule, parameterSyntax.Modifiers[pos].GetLocation(), parameterSyntax.Identifier.Text));
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine(ex.Message);
+                throw;
+            }
         }
 
         private static void AnalyzeSymbol(SymbolAnalysisContext context)
         {
+            return;
+            //Debugger.Break();
             // TODO: Replace the following code with your own analysis, generating Diagnostic objects for any issues you find
             var namedTypeSymbol = (INamedTypeSymbol)context.Symbol;
 

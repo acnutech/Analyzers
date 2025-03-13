@@ -20,7 +20,7 @@ namespace RefParameterAnalyzer.Test
 
         //Diagnostic and CodeFix both triggered and checked for
         [TestMethod]
-        public async Task TestMethod2()
+        public async Task RefParameter_IsFixable()
         {
             var test = @"
     using System;
@@ -32,8 +32,9 @@ namespace RefParameterAnalyzer.Test
 
     namespace ConsoleApplication1
     {
-        class {|#0:TypeName|}
-        {   
+        class Test
+        {
+            void MethodA({|#0:ref|} int a) {}
         }
     }";
 
@@ -52,8 +53,32 @@ namespace RefParameterAnalyzer.Test
         }
     }";
 
-            var expected = VerifyCS.Diagnostic("RefParameterAnalyzer").WithLocation(0).WithArguments("TypeName");
-            await VerifyCS.VerifyCodeFixAsync(test, expected, fixtest);
+            var expected = VerifyCS.Diagnostic("RefParameterAnalyzer").WithLocation(0).WithArguments("a");
+            await VerifyCS.VerifyAnalyzerAsync(test, expected);
+        }
+
+        [TestMethod]
+        public async Task RequiredRefModifier_NotReported()
+        {
+            var test = @"
+    using System;
+    using System.Collections.Generic;
+    using System.Linq;
+    using System.Text;
+    using System.Threading.Tasks;
+    using System.Diagnostics;
+
+    namespace ConsoleApplication1
+    {
+        class Test
+        {
+            void MethodA({|#0:ref|} int a) {
+                a = 1;
+            }
+        }
+    }";
+
+            await VerifyCS.VerifyAnalyzerAsync(test);
         }
     }
 }

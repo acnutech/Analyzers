@@ -61,7 +61,7 @@ namespace RefParameterAnalyzer {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to The ref attribute can be removed..
+        ///   Looks up a localized string similar to Read-only parameters should not be ref..
         /// </summary>
         internal static string AnalyzerDescription {
             get {
@@ -70,7 +70,7 @@ namespace RefParameterAnalyzer {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to The ref attribute can be removed because the parameter &apos;{0}&apos; is not assigned.
+        ///   Looks up a localized string similar to Ref attribute can be removed from the parameter &apos;{0}&apos; .
         /// </summary>
         internal static string AnalyzerMessageFormat {
             get {
@@ -79,7 +79,7 @@ namespace RefParameterAnalyzer {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to The ref attribute of the parameter is not needed.
+        ///   Looks up a localized string similar to Type name contains lowercase letters.
         /// </summary>
         internal static string AnalyzerTitle {
             get {
