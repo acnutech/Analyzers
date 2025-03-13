@@ -53,6 +53,23 @@ namespace RefParameterAnalyzer
             {
                 // Perform data flow analysis on the parameter.
                 var method = parameterSyntax.FirstAncestorOrSelf<MethodDeclarationSyntax>();
+
+                if (method.Body == null)
+                {
+                    return;
+                }
+
+                if (method.Modifiers.Any(SyntaxKind.OverrideKeyword))
+                {
+                    return;
+                }
+
+                IMethodSymbol methodSymbol = context.SemanticModel.GetDeclaredSymbol(method, context.CancellationToken);
+                if (methodSymbol.ExplicitInterfaceImplementations.Any() || ImplementsInterfaceImplicitly(methodSymbol))
+                {
+                    return;
+                }
+
                 DataFlowAnalysis dataFlowAnalysis = context.SemanticModel.AnalyzeDataFlow(method.Body);
 
                 ISymbol parameterSymbol = context.SemanticModel.GetDeclaredSymbol(parameterSyntax, context.CancellationToken);
@@ -68,6 +85,28 @@ namespace RefParameterAnalyzer
                 Debug.WriteLine(ex.Message);
                 throw;
             }
+        }
+
+        private bool ImplementsInterfaceImplicitly(IMethodSymbol methodSymbol)
+        {
+            if(methodSymbol.DeclaredAccessibility == Accessibility.Private
+                || methodSymbol.DeclaredAccessibility == Accessibility.NotApplicable)
+            {
+                return false;
+            }
+
+            var containingType = methodSymbol.ContainingType;
+            foreach (var interfaceType in containingType.AllInterfaces)
+            {
+                foreach (var interfaceMember in interfaceType.GetMembers())
+                {
+                    if (SymbolEqualityComparer.Default.Equals(methodSymbol, containingType.FindImplementationForInterfaceMember(interfaceMember)))
+                    {
+                        return true;
+                    }
+                }
+            }
+            return false;
         }
 
         private static void AnalyzeSymbol(SymbolAnalysisContext context)

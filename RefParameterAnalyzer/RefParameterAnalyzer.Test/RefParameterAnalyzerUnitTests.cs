@@ -11,7 +11,7 @@ namespace RefParameterAnalyzer.Test
     {
         //No diagnostics expected to show up
         [TestMethod]
-        public async Task TestMethod1()
+        public async Task EmptyFile_IsIgnored()
         {
             var test = @"";
 
@@ -58,7 +58,88 @@ namespace RefParameterAnalyzer.Test
         }
 
         [TestMethod]
-        public async Task RequiredRefModifier_NotReported()
+        public async Task OverridingMethod_IsOmitted()
+        {
+            var test = @"
+    using System;
+    using System.Collections.Generic;
+    using System.Linq;
+    using System.Text;
+    using System.Threading.Tasks;
+    using System.Diagnostics;
+
+    namespace ConsoleApplication1
+    {
+        abstract class Base {
+            public abstract void MethodA(ref int a);
+        }
+
+        class Test : Base
+        {
+            public override void MethodA(ref int a) {
+            }
+        }
+    }";
+
+            await VerifyCS.VerifyAnalyzerAsync(test);
+        }
+
+        [TestMethod]
+        public async Task MethodExplicitlyImplementsInterface_IsOmitted()
+        {
+            var test = @"
+    using System;
+    using System.Collections.Generic;
+    using System.Linq;
+    using System.Text;
+    using System.Threading.Tasks;
+    using System.Diagnostics;
+
+    namespace ConsoleApplication1
+    {
+        interface IBase {
+            public void MethodA(ref int a);
+        }
+
+        class Test : IBase
+        {
+            public void MethodA(ref int a) {
+            }
+        }
+    }";
+
+            await VerifyCS.VerifyAnalyzerAsync(test);
+        }
+
+        [TestMethod]
+        public async Task MethodImplementsInterface_IsOmitted()
+        {
+            var test = @"
+    using System;
+    using System.Collections.Generic;
+    using System.Linq;
+    using System.Text;
+    using System.Threading.Tasks;
+    using System.Diagnostics;
+
+    namespace ConsoleApplication1
+    {
+        interface IBase {
+            public void MethodA(ref int a);
+        }
+
+        class Test : IBase
+        {
+            void IBase.MethodA(ref int a) {
+            }
+        }
+    }";
+
+            await VerifyCS.VerifyAnalyzerAsync(test);
+        }
+
+        [TestMethod]
+        public async Task AssignedRefModifier_IsOmitted()
         {
             var test = @"
     using System;
