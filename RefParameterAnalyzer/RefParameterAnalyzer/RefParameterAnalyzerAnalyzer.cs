@@ -54,7 +54,7 @@ namespace RefParameterAnalyzer
                 // Perform data flow analysis on the parameter.
                 var method = parameterSyntax.FirstAncestorOrSelf<MethodDeclarationSyntax>();
 
-                if (method.Body == null)
+                if (method.Modifiers.Any(SyntaxKind.VirtualKeyword) || method.Body == null)
                 {
                     return;
                 }

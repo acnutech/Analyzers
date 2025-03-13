@@ -161,5 +161,29 @@ namespace RefParameterAnalyzer.Test
 
             await VerifyCS.VerifyAnalyzerAsync(test);
         }
+
+
+        [TestMethod]
+        public async Task VirtualMethod_IsOmitted()
+        {
+            var test = @"
+    using System;
+    using System.Collections.Generic;
+    using System.Linq;
+    using System.Text;
+    using System.Threading.Tasks;
+    using System.Diagnostics;
+
+    namespace ConsoleApplication1
+    {
+        class Test
+        {
+            public virtual void MethodA({|#0:ref|} int a) {
+            }
+        }
+    }";
+
+            await VerifyCS.VerifyAnalyzerAsync(test);
+        }
     }
 }
