@@ -1,4 +1,5 @@
-﻿using System.Threading.Tasks;
+﻿using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using VerifyCS = RefParameterAnalyzer.Test.CSharpCodeFixVerifier<
     RefParameterAnalyzer.RefParameterAnalyzerAnalyzer,
@@ -48,13 +49,14 @@ namespace RefParameterAnalyzer.Test
 
     namespace ConsoleApplication1
     {
-        class TYPENAME
-        {   
+        class Test
+        {
+            void MethodA(int a) {}
         }
     }";
 
             var expected = VerifyCS.Diagnostic("RefParameterAnalyzer").WithLocation(0).WithArguments("a");
-            await VerifyCS.VerifyAnalyzerAsync(test, expected);
+            await VerifyCS.VerifyCodeFixAsync(test, expected, fixtest);
         }
 
         [TestMethod]
@@ -153,7 +155,7 @@ namespace RefParameterAnalyzer.Test
     {
         class Test
         {
-            void MethodA({|#0:ref|} int a) {
+            void MethodA(ref int a) {
                 a = 1;
             }
         }
@@ -161,7 +163,6 @@ namespace RefParameterAnalyzer.Test
 
             await VerifyCS.VerifyAnalyzerAsync(test);
         }
-
 
         [TestMethod]
         public async Task VirtualMethod_IsOmitted()
@@ -178,10 +179,24 @@ namespace RefParameterAnalyzer.Test
     {
         class Test
         {
-            public virtual void MethodA({|#0:ref|} int a) {
+            public virtual void MethodA(ref int a) {
             }
         }
     }";
+
+            await VerifyCS.VerifyAnalyzerAsync(test);
+        }
+
+        [TestMethod]
+        public async Task RefIsUsedAsRefForAnotherCall_IsOmitted()
+        {
+            var test = @"
+        class Test
+        {
+            void MethodA(ref bool a) {
+                System.Threading.Monitor.TryEnter(new object(), ref a);
+            }            
+        }";
 
             await VerifyCS.VerifyAnalyzerAsync(test);
         }
