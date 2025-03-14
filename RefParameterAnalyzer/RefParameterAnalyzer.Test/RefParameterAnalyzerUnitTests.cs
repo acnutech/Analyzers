@@ -24,13 +24,6 @@ namespace RefParameterAnalyzer.Test
         public async Task RefParameter_IsFixable()
         {
             var test = @"
-    using System;
-    using System.Collections.Generic;
-    using System.Linq;
-    using System.Text;
-    using System.Threading.Tasks;
-    using System.Diagnostics;
-
     namespace ConsoleApplication1
     {
         class Test
@@ -40,13 +33,6 @@ namespace RefParameterAnalyzer.Test
     }";
 
             var fixtest = @"
-    using System;
-    using System.Collections.Generic;
-    using System.Linq;
-    using System.Text;
-    using System.Threading.Tasks;
-    using System.Diagnostics;
-
     namespace ConsoleApplication1
     {
         class Test
@@ -63,13 +49,6 @@ namespace RefParameterAnalyzer.Test
         public async Task OverridingMethod_IsOmitted()
         {
             var test = @"
-    using System;
-    using System.Collections.Generic;
-    using System.Linq;
-    using System.Text;
-    using System.Threading.Tasks;
-    using System.Diagnostics;
-
     namespace ConsoleApplication1
     {
         abstract class Base {
@@ -90,13 +69,6 @@ namespace RefParameterAnalyzer.Test
         public async Task MethodExplicitlyImplementsInterface_IsOmitted()
         {
             var test = @"
-    using System;
-    using System.Collections.Generic;
-    using System.Linq;
-    using System.Text;
-    using System.Threading.Tasks;
-    using System.Diagnostics;
-
     namespace ConsoleApplication1
     {
         interface IBase {
@@ -117,13 +89,6 @@ namespace RefParameterAnalyzer.Test
         public async Task MethodImplementsInterface_IsOmitted()
         {
             var test = @"
-    using System;
-    using System.Collections.Generic;
-    using System.Linq;
-    using System.Text;
-    using System.Threading.Tasks;
-    using System.Diagnostics;
-
     namespace ConsoleApplication1
     {
         interface IBase {
@@ -144,13 +109,6 @@ namespace RefParameterAnalyzer.Test
         public async Task AssignedRefModifier_IsOmitted()
         {
             var test = @"
-    using System;
-    using System.Collections.Generic;
-    using System.Linq;
-    using System.Text;
-    using System.Threading.Tasks;
-    using System.Diagnostics;
-
     namespace ConsoleApplication1
     {
         class Test
@@ -168,13 +126,6 @@ namespace RefParameterAnalyzer.Test
         public async Task VirtualMethod_IsOmitted()
         {
             var test = @"
-    using System;
-    using System.Collections.Generic;
-    using System.Linq;
-    using System.Text;
-    using System.Threading.Tasks;
-    using System.Diagnostics;
-
     namespace ConsoleApplication1
     {
         class Test
