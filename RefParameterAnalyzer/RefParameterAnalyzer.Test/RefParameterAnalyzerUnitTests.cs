@@ -44,6 +44,81 @@ namespace RefParameterAnalyzer.Test
             var expected = VerifyCS.Diagnostic("RefParameterAnalyzer").WithLocation(0).WithArguments("a");
             await VerifyCS.VerifyCodeFixAsync(test, expected, fixtest);
         }
+        
+        //Diagnostic and CodeFix both triggered and checked for
+        [TestMethod]
+        public async Task FixUsagesOfMethodWithRefParameters()
+        {
+            var test = @"
+    namespace ConsoleApplication1
+    {
+        class Test
+        {
+            void MethodA({|#0:ref|} int a) {}
+
+            void MethodB()
+            {
+                int b = 0;
+                MethodA(ref b);
+            }
+        }
+    }";
+
+            var fixtest = @"
+    namespace ConsoleApplication1
+    {
+        class Test
+        {
+            void MethodA(int a) {}
+
+            void MethodB()
+            {
+                int b = 0;
+                MethodA(b);
+            }
+        }
+    }";
+
+            var expected = VerifyCS.Diagnostic("RefParameterAnalyzer").WithLocation(0).WithArguments("a");
+            await VerifyCS.VerifyCodeFixAsync(test, expected, fixtest);
+        }
+
+        [TestMethod]
+        public async Task FixUsagesOfMethodWithRefParameters2()
+        {
+            var test = @"
+    namespace ConsoleApplication1
+    {
+        class Test
+        {
+            void MethodA({|#0:ref|} int a) {}
+
+            void MethodB()
+            {
+                int b = 0;
+                MethodA(ref b);
+            }
+        }
+    }";
+
+            var fixtest = @"
+    namespace ConsoleApplication1
+    {
+        class Test
+        {
+            void MethodA(int a) {}
+
+            void MethodB()
+            {
+                int b = 0;
+                MethodA(b);
+            }
+        }
+    }";
+
+            var expected = VerifyCS.Diagnostic("RefParameterAnalyzer").WithLocation(0).WithArguments("a");
+            await VerifyCS.VerifyCodeFixAsync(test, expected, fixtest);
+        }
 
         [TestMethod]
         public async Task OverridingMethod_IsOmitted()

@@ -10,9 +10,9 @@ using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Microsoft.CodeAnalysis.FindSymbols;
 using Microsoft.CodeAnalysis.Formatting;
-using Microsoft.CodeAnalysis.Rename;
-using Microsoft.CodeAnalysis.Text;
+
 
 namespace RefParameterAnalyzer
 {
@@ -56,11 +56,53 @@ namespace RefParameterAnalyzer
             var newParameter = parameterSyntax.WithModifiers(SyntaxFactory.TokenList(otherModifiers))
                 .WithAdditionalAnnotations(Formatter.Annotation);
 
-            //var refModifierIndex = parameterSyntax.Modifiers.IndexOf(SyntaxKind.RefKeyword);
             SyntaxNode oldRoot = await document.GetSyntaxRootAsync(cancellationToken).ConfigureAwait(false);
-            var newRoot = oldRoot.ReplaceNode(parameterSyntax, newParameter);
+            SyntaxNode newRoot = oldRoot.ReplaceNode(parameterSyntax, newParameter);
 
-            return document.WithSyntaxRoot(newRoot).Project.Solution;
+            var methodDeclarationSyntax = parameterSyntax.FirstAncestorOrSelf<MethodDeclarationSyntax>();
+            var semanticModel = await document.GetSemanticModelAsync(cancellationToken).ConfigureAwait(false);
+            var methodSymbol = semanticModel.GetDeclaredSymbol(methodDeclarationSyntax, cancellationToken);
+
+            var methodReferences = await SymbolFinder.FindReferencesAsync(methodSymbol, document.Project.Solution, cancellationToken);
+
+            var solution = document.WithSyntaxRoot(newRoot).Project.Solution;
+
+            int refParemeterIndex = methodDeclarationSyntax.ParameterList.Parameters.IndexOf(parameterSyntax);
+
+            foreach (var methodReference in methodReferences)
+            {
+                foreach (var location in methodReference.Locations)
+                {
+                    var referenceDocument = solution.GetDocument(location.Document.Id);
+                    if (referenceDocument == null)
+                    {
+                        continue;
+                    }
+                    var referenceRoot = await referenceDocument.GetSyntaxRootAsync(cancellationToken);
+                    var methodIdentifierNode = referenceRoot.FindNode(location.Location.SourceSpan);
+
+                    var invocationExpression = methodIdentifierNode.FirstAncestorOrSelf<InvocationExpressionSyntax>();
+
+                    var arguments = invocationExpression.ArgumentList.Arguments;
+                    if (arguments == null || arguments.Count <= refParemeterIndex)
+                    {
+                        continue;
+                    }
+
+                    var argument = arguments[refParemeterIndex];
+                    if (argument.RefKindKeyword.Kind() != SyntaxKind.RefKeyword)
+                    {
+                        continue;
+                    }
+
+                    var newReferenceRoot = referenceRoot.ReplaceNode(
+                        invocationExpression,
+                        invocationExpression.WithArgumentList(invocationExpression.ArgumentList.ReplaceNode(argument, argument.WithRefKindKeyword(SyntaxFactory.Token(SyntaxKind.None)))));
+                    solution = solution.WithDocumentSyntaxRoot(location.Document.Id, newReferenceRoot);
+                }
+            }
+
+            return solution;
         }
     }
 }
