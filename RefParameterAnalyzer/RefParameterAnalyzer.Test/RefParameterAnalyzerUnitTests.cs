@@ -10,7 +10,6 @@ namespace RefParameterAnalyzer.Test
     [TestClass]
     public class RefParameterAnalyzerUnitTest
     {
-        //No diagnostics expected to show up
         [TestMethod]
         public async Task EmptyFile_IsIgnored()
         {
@@ -19,7 +18,6 @@ namespace RefParameterAnalyzer.Test
             await VerifyCS.VerifyAnalyzerAsync(test);
         }
 
-        //Diagnostic and CodeFix both triggered and checked for
         [TestMethod]
         public async Task RefParameter_IsFixable()
         {
@@ -45,7 +43,6 @@ namespace RefParameterAnalyzer.Test
             await VerifyCS.VerifyCodeFixAsync(test, expected, fixtest);
         }
         
-        //Diagnostic and CodeFix both triggered and checked for
         [TestMethod]
         public async Task FixUsagesOfMethodWithRefParameters()
         {
@@ -97,6 +94,11 @@ namespace RefParameterAnalyzer.Test
             {
                 int b = 0;
                 MethodA(ref b);
+                MethodA(ref b);
+                MethodA(ref b);
+                MethodA(ref b);
+                MethodA(ref b);
+                MethodA(ref b);
             }
         }
     }";
@@ -111,6 +113,11 @@ namespace RefParameterAnalyzer.Test
             void MethodB()
             {
                 int b = 0;
+                MethodA(b);
+                MethodA(b);
+                MethodA(b);
+                MethodA(b);
+                MethodA(b);
                 MethodA(b);
             }
         }

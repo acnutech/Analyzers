@@ -10,6 +10,7 @@ using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Microsoft.CodeAnalysis.Editing;
 using Microsoft.CodeAnalysis.FindSymbols;
 using Microsoft.CodeAnalysis.Formatting;
 
@@ -65,19 +66,27 @@ namespace RefParameterAnalyzer
 
             var methodReferences = await SymbolFinder.FindReferencesAsync(methodSymbol, document.Project.Solution, cancellationToken);
 
+            var methodReferencesByDocument =
+                methodReferences
+                .SelectMany(r => r.Locations)
+                .GroupBy(l => l.Document.Id);
+
             var solution = document.WithSyntaxRoot(newRoot).Project.Solution;
 
             int refParemeterIndex = methodDeclarationSyntax.ParameterList.Parameters.IndexOf(parameterSyntax);
 
-            foreach (var methodReference in methodReferences)
+            foreach (var documentGroup in methodReferencesByDocument)
             {
-                foreach (var location in methodReference.Locations)
+                var referenceDocument = solution.GetDocument(documentGroup.Key);
+                if (referenceDocument == null)
                 {
-                    var referenceDocument = solution.GetDocument(location.Document.Id);
-                    if (referenceDocument == null)
-                    {
-                        continue;
-                    }
+                    continue;
+                }
+
+                var documentEditor = await DocumentEditor.CreateAsync(referenceDocument, cancellationToken);
+
+                foreach (var location in documentGroup.OrderByDescending(dg => dg.Location.SourceSpan.Start))
+                {
                     var referenceRoot = await referenceDocument.GetSyntaxRootAsync(cancellationToken);
                     var methodIdentifierNode = referenceRoot.FindNode(location.Location.SourceSpan);
 
@@ -98,8 +107,14 @@ namespace RefParameterAnalyzer
                     var newReferenceRoot = referenceRoot.ReplaceNode(
                         invocationExpression,
                         invocationExpression.WithArgumentList(invocationExpression.ArgumentList.ReplaceNode(argument, argument.WithRefKindKeyword(SyntaxFactory.Token(SyntaxKind.None)))));
-                    solution = solution.WithDocumentSyntaxRoot(location.Document.Id, newReferenceRoot);
+
+                    documentEditor.ReplaceNode(
+                                            invocationExpression,
+                                            invocationExpression.WithArgumentList(invocationExpression.ArgumentList.ReplaceNode(argument, argument.WithRefKindKeyword(SyntaxFactory.Token(SyntaxKind.None)))));
                 }
+
+                var updatedDocument = documentEditor.GetChangedDocument();
+                solution = updatedDocument.Project.Solution;
             }
 
             return solution;
