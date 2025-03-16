@@ -118,15 +118,15 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <data name="AnalyzerDescription" xml:space="preserve">
-    <value>Read-only parameters should not be ref.</value>
+    <value>Parameters do not need ref modifier if their value is not changed (e.g. they are not assigned a different value).</value>
     <comment>An optional longer localizable description of the diagnostic.</comment>
   </data>
   <data name="AnalyzerMessageFormat" xml:space="preserve">
-    <value>Ref attribute can be removed from the parameter '{0}' </value>
+    <value>The ref modifier can be removed from the parameter '{0}' </value>
     <comment>The format-able message the diagnostic displays.</comment>
   </data>
   <data name="AnalyzerTitle" xml:space="preserve">
-    <value>Parameter does not need its ref attribute</value>
+    <value>Parameter does not need its ref modifier</value>
     <comment>The title of the diagnostic.</comment>
   </data>
 </root>

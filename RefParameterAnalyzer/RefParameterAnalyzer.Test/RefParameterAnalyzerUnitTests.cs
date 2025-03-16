@@ -2,10 +2,10 @@
 using System.Threading.Tasks;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using VerifyCS = RefParameterAnalyzer.Test.CSharpCodeFixVerifier<
-    RefParameterAnalyzer.RefParameterAnalyzerAnalyzer,
-    RefParameterAnalyzer.RefParameterAnalyzerCodeFixProvider>;
+    Acnutech.RefParameterAnalyzer.RefParameterAnalyzerAnalyzer,
+    Acnutech.RefParameterAnalyzer.RefParameterAnalyzerCodeFixProvider>;
 
-namespace RefParameterAnalyzer.Test
+namespace Acnutech.RefParameterAnalyzer.Test
 {
     [TestClass]
     public class RefParameterAnalyzerUnitTest
@@ -39,7 +39,7 @@ namespace RefParameterAnalyzer.Test
         }
     }";
 
-            var expected = VerifyCS.Diagnostic("RefParameterAnalyzer").WithLocation(0).WithArguments("a");
+            var expected = VerifyCS.Diagnostic("ACNU0001").WithLocation(0).WithArguments("a");
             await VerifyCS.VerifyCodeFixAsync(test, expected, fixtest);
         }
         
@@ -76,7 +76,7 @@ namespace RefParameterAnalyzer.Test
         }
     }";
 
-            var expected = VerifyCS.Diagnostic("RefParameterAnalyzer").WithLocation(0).WithArguments("a");
+            var expected = VerifyCS.Diagnostic("ACNU0001").WithLocation(0).WithArguments("a");
             await VerifyCS.VerifyCodeFixAsync(test, expected, fixtest);
         }
 
@@ -123,7 +123,7 @@ namespace RefParameterAnalyzer.Test
         }
     }";
 
-            var expected = VerifyCS.Diagnostic("RefParameterAnalyzer").WithLocation(0).WithArguments("a");
+            var expected = VerifyCS.Diagnostic("ACNU0001").WithLocation(0).WithArguments("a");
             await VerifyCS.VerifyCodeFixAsync(test, expected, fixtest);
         }
 

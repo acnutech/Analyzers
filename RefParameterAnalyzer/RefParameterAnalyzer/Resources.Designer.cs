@@ -8,7 +8,7 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace RefParameterAnalyzer {
+namespace Acnutech.RefParameterAnalyzer {
     using System;
     
     
@@ -39,7 +39,7 @@ namespace RefParameterAnalyzer {
         internal static global::System.Resources.ResourceManager ResourceManager {
             get {
                 if (object.ReferenceEquals(resourceMan, null)) {
-                    global::System.Resources.ResourceManager temp = new global::System.Resources.ResourceManager("RefParameterAnalyzer.Resources", typeof(Resources).Assembly);
+                    global::System.Resources.ResourceManager temp = new global::System.Resources.ResourceManager("Acnutech.RefParameterAnalyzer.Resources", typeof(Resources).Assembly);
                     resourceMan = temp;
                 }
                 return resourceMan;
@@ -61,7 +61,7 @@ namespace RefParameterAnalyzer {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Read-only parameters should not be ref..
+        ///   Looks up a localized string similar to Parameters do not need ref modifier if their value is not changed (e.g. they are not assigned a different value)..
         /// </summary>
         internal static string AnalyzerDescription {
             get {
@@ -70,7 +70,7 @@ namespace RefParameterAnalyzer {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Ref attribute can be removed from the parameter &apos;{0}&apos; .
+        ///   Looks up a localized string similar to The ref modifier can be removed from the parameter &apos;{0}&apos; .
         /// </summary>
         internal static string AnalyzerMessageFormat {
             get {
@@ -79,7 +79,7 @@ namespace RefParameterAnalyzer {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Type name contains lowercase letters.
+        ///   Looks up a localized string similar to Parameter does not need its ref modifier.
         /// </summary>
         internal static string AnalyzerTitle {
             get {

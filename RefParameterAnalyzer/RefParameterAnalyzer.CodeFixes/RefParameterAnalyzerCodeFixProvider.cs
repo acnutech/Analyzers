@@ -15,7 +15,7 @@ using Microsoft.CodeAnalysis.FindSymbols;
 using Microsoft.CodeAnalysis.Formatting;
 
 
-namespace RefParameterAnalyzer
+namespace Acnutech.RefParameterAnalyzer
 {
     [ExportCodeFixProvider(LanguageNames.CSharp, Name = nameof(RefParameterAnalyzerCodeFixProvider)), Shared]
     public class RefParameterAnalyzerCodeFixProvider : CodeFixProvider
