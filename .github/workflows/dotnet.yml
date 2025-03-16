@@ -32,7 +32,7 @@ jobs:
       
     - name: Test
       working-directory: ./src
-      run: dotnet test --configuration Rlease --no-build --verbosity normal
+      run: dotnet test --configuration Release --no-build --verbosity normal
       
     - name: Package the VSIX
       working-directory: ./src
