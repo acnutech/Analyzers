@@ -5,9 +5,9 @@ name: .NET
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "main", "preview" ]
   pull_request:
-    branches: [ "main" ]
+    branches: [ "main", "preview" ]
 
 jobs:
   build:
@@ -16,6 +16,9 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
+
+    - name: Setup MSBuild
+      uses: microsoft/setup-msbuild@v1 
     
     - name: Setup .NET
       uses: actions/setup-dotnet@v4
