@@ -10,33 +10,35 @@ on:
     branches: [ "main" ]
 
 jobs:
-  build:
 
-    runs-on: windows-latest
-
+  pre_build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./src
     steps:
     - uses: actions/checkout@v4
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: 9.0.200
+    - name: Restore dependencies
+      run: dotnet restore
+    - name: Build
+      run: dotnet build --no-restore --configuration Release
+    - name: Test
+      run: dotnet test --no-build --verbosity normal --configuration Release
 
+  build_vs_extension:
+    needs: pre_build
+    runs-on: windows-latest
+    steps:
+    - uses: actions/checkout@v4
     - name: Setup MSBuild
-      uses: microsoft/setup-msbuild@v1 
-    
-    # - name: Setup .NET
-    #   uses: actions/setup-dotnet@v4
-    #   with:
-    #     dotnet-version: 9.0.200
-        
+      uses: microsoft/setup-msbuild@v1         
     - name: Restore dependencies
       working-directory: ./src
       run: dotnet restore
-      
-    # - name: Build
-    #   working-directory: ./src
-    #   run: dotnet build --no-restore --configuration Release
-      
-    # - name: Test
-    #   working-directory: ./src
-    #   run: dotnet test --configuration Release --no-build --verbosity normal
-      
     - name: Package the VSIX
       working-directory: ./src/Analyzers/Analyzers.Vsix
       run: msbuild /m /p:Configuration=Release /p:DeployExtension=false /p:VSIXContainer=true
