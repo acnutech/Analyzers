@@ -45,7 +45,7 @@ jobs:
         mmpVer=$(jq -r '.MajorMinorPatch' version.json)
         prVer="$(jq -r '.MajorMinorPatch' version.json)-$(jq -r '.PreReleaseLabel' version.json).${{ github.run_number }}.${{ github.run_attempt }}"
         if [ "${{ github.event_name }}" = "pull_request" ]; then version=$prVer; fi
-        echo "version ${semVer} ${mmpVer}"}"
+        echo "version semantic: ${semVer} major-minor-patch ${mmpVer}"
         echo "semVer=${semVer}" >> $GITHUB_OUTPUT
         echo "mmpVer=${mmpVer}" >> $GITHUB_OUTPUT
     - name: Restore dependencies
