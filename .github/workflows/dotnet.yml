@@ -64,7 +64,7 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     - name: Update version in VSIX manifest
-      run: (Get-Content source.extension.vsixmanifest) -replace 'Version="1.0"', 'Version="${{ needs.pre_build.outputs.mmpVersion}}"' | Set-Content source.extension.vsixmanifest
+      run: (Get-Content source.extension.vsixmanifest) -creplace 'Version="1.0"', 'Version="${{ needs.pre_build.outputs.mmpVersion}}"' | Set-Content source.extension.vsixmanifest
     - name: Setup MSBuild
       uses: microsoft/setup-msbuild@v1         
     - name: Restore dependencies
