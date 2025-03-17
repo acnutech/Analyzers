@@ -35,7 +35,7 @@ jobs:
       uses: actions/setup-dotnet@v4
       with:
         dotnet-version: 9.0.200
-    - run: dotnet tool install GitVersion.Tool --version 6.1.0
+    - run: dotnet tool install -g GitVersion.Tool --version 6.1.0
     - name: Resolve version
       id: version
       run: |
