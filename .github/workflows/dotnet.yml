@@ -39,4 +39,4 @@ jobs:
       
     - name: Package the VSIX
       working-directory: ./src/Analyzers/Analyzers.Vsix
-      run: msbuild /m /p Configuration=Release /p:DeployExtension=false /p:VSIXContainer=true
+      run: msbuild /m /p:Configuration=Release /p:DeployExtension=false /p:VSIXContainer=true
