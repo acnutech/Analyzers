@@ -6,8 +6,16 @@ name: .NET
 on:
   push:
     branches: [ "main", "preview" ]
+    tags:
+      - v*
   pull_request:
     branches: [ "main" ]
+
+env:
+  Configuration: Release
+  TreatWarningsAsErrors: true
+  Deterministic: true
+  RunCodeAnalysis: false
 
 jobs:
 
@@ -25,9 +33,9 @@ jobs:
     - name: Restore dependencies
       run: dotnet restore
     - name: Build
-      run: dotnet build --no-restore --configuration Release
+      run: dotnet build --no-restore
     - name: Test
-      run: dotnet test --no-build --verbosity normal --configuration Release
+      run: dotnet test --no-build --verbosity normal
 
   build_vs_extension:
     needs: pre_build
@@ -41,4 +49,4 @@ jobs:
       run: dotnet restore
     - name: Package the VSIX
       working-directory: ./src/Analyzers/Analyzers.Vsix
-      run: msbuild /m /p:Configuration=Release /p:DeployExtension=false /p:VSIXContainer=true
+      run: msbuild /m /p:DeployExtension=false /p:VSIXContainer=true
