@@ -5,35 +5,75 @@ name: .NET
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "main", "preview" ]
+    tags:
+      - v*
   pull_request:
     branches: [ "main" ]
 
+env:
+  Configuration: Release
+  TreatWarningsAsErrors: true
+  Deterministic: true
+  RunCodeAnalysis: false
+
 jobs:
-  build:
 
-    runs-on: windows-latest
-
+  pre_build:
+    runs-on: ubuntu-latest
+    outputs:
+        semVersion: ${{ steps.version.outputs.semVer }}
+        mmpVersion: ${{ steps.version.outputs.mmpVer }}
+    defaults:
+      run:
+        working-directory: ./src
     steps:
     - uses: actions/checkout@v4
-    
+      with:
+        fetch-depth: 0
     - name: Setup .NET
       uses: actions/setup-dotnet@v4
       with:
         dotnet-version: 9.0.200
-        
+    - run: dotnet tool install -g GitVersion.Tool --version 6.1.0
+    - name: Resolve version
+      id: version
+      run: |
+        dotnet-gitversion
+        dotnet-gitversion > version.json
+        semVer=$(jq -r '.SemVer' version.json)
+        mmpVer=$(jq -r '.MajorMinorPatch' version.json)
+        prVer="$(jq -r '.MajorMinorPatch' version.json)-$(jq -r '.PreReleaseLabel' version.json).${{ github.run_number }}.${{ github.run_attempt }}"
+        if [ "${{ github.event_name }}" = "pull_request" ]; then version=$prVer; fi
+        echo "version semantic: ${semVer} major-minor-patch ${mmpVer}"
+        echo "semVer=${semVer}" >> $GITHUB_OUTPUT
+        echo "mmpVer=${mmpVer}" >> $GITHUB_OUTPUT
+    - name: Restore dependencies
+      run: dotnet restore
+    - name: Build
+      run: dotnet build --no-restore
+    - name: Test
+      run: dotnet test --no-build --verbosity normal
+
+  build_vs_extension:
+    needs: pre_build
+    runs-on: windows-latest
+    defaults:
+      run:
+        working-directory: ./src/Analyzers/Analyzers.Vsix
+    steps:
+    - uses: actions/checkout@v4
+    - name: Update version in VSIX manifest
+      run: (Get-Content source.extension.vsixmanifest) -creplace 'Version="0.1.0"', 'Version="${{ needs.pre_build.outputs.mmpVersion}}"' | Set-Content source.extension.vsixmanifest
+    - name: Setup MSBuild
+      uses: microsoft/setup-msbuild@v1         
     - name: Restore dependencies
       working-directory: ./src
       run: dotnet restore
-      
-    - name: Build
-      working-directory: ./src
-      run: dotnet build --no-restore --configuration Release
-      
-    - name: Test
-      working-directory: ./src
-      run: dotnet test --configuration Release --no-build --verbosity normal
-      
     - name: Package the VSIX
-      working-directory: ./src
-      run: msbuild /p Configuration=Release /p:DeployExtension=false /p:VSIXContainer=true
+      working-directory: ./src/Analyzers/Analyzers.Vsix
+      run: msbuild /m /p:DeployExtension=false /p:VSIXContainer=true
+    - uses: actions/upload-artifact@v4
+      with:
+        name: vs_extension_vsix
+        path: src/Analyzers/Analyzers.Vsix/bin/Release/net9.0/Analyzers.Vsix.vsix
