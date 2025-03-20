@@ -1,9 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <PackageManifest Version="2.0.0" xmlns="http://schemas.microsoft.com/developer/vsx-schema/2011" xmlns:d="http://schemas.microsoft.com/developer/vsx-schema-design/2011">
   <Metadata>
-    <Identity Id="Analyzers.2b95f9a7-6854-4382-a8f6-9179ae193b7b" Version="0.1.0" Language="en-US" Publisher="Acnutech"/>
+    <Identity Id="2b95f9a7-6854-4382-a8f6-9179ae193b7b" Version="0.1.0" Language="en-US" Publisher="Acnutech"/>
     <DisplayName>Acnutech C# Analyzers</DisplayName>
     <Description xml:space="preserve">Various C# analyzers and code fixers.</Description>
+    <MoreInfo>https://github.com/acnutech/Analyzers</MoreInfo>
+    <Preview>true</Preview>
   </Metadata>
   <Installation>
     <InstallationTarget Id="Microsoft.VisualStudio.Community" Version="[17.0,18.0)">
