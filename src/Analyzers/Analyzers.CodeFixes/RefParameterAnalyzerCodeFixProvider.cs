@@ -53,9 +53,19 @@ namespace Acnutech.Analyzers
 
         private async Task<Solution> RemoveRefModifier(Document document, ParameterSyntax parameterSyntax, CancellationToken cancellationToken)
         {
-            var otherModifiers = parameterSyntax.Modifiers.Where(m => m.Kind() != SyntaxKind.RefKeyword);
-            var newParameter = parameterSyntax.WithModifiers(SyntaxFactory.TokenList(otherModifiers))
-                .WithAdditionalAnnotations(Formatter.Annotation);
+            if (parameterSyntax.Modifiers.Count != 1)
+            {
+                return document.Project.Solution;
+            }
+
+            var refModifier = parameterSyntax.Modifiers[0];
+            if (refModifier.Kind() != SyntaxKind.RefKeyword)
+            {
+                return document.Project.Solution;
+            }
+
+            var newParameter = parameterSyntax.WithModifiers(SyntaxFactory.TokenList())
+                .WithType(parameterSyntax.Type.WithLeadingTrivia(refModifier.LeadingTrivia));
 
             SyntaxNode oldRoot = await document.GetSyntaxRootAsync(cancellationToken).ConfigureAwait(false);
             SyntaxNode newRoot = oldRoot.ReplaceNode(parameterSyntax, newParameter);
@@ -93,24 +103,29 @@ namespace Acnutech.Analyzers
                     var invocationExpression = methodIdentifierNode.FirstAncestorOrSelf<InvocationExpressionSyntax>();
 
                     var arguments = invocationExpression.ArgumentList.Arguments;
-                    if (arguments == null || arguments.Count <= refParemeterIndex)
+                    if (arguments.Count <= refParemeterIndex)
                     {
                         continue;
                     }
 
                     var argument = arguments[refParemeterIndex];
+
                     if (argument.RefKindKeyword.Kind() != SyntaxKind.RefKeyword)
                     {
                         continue;
                     }
 
-                    var newReferenceRoot = referenceRoot.ReplaceNode(
-                        invocationExpression,
-                        invocationExpression.WithArgumentList(invocationExpression.ArgumentList.ReplaceNode(argument, argument.WithRefKindKeyword(SyntaxFactory.Token(SyntaxKind.None)))));
+                    var argumentWithoutRef = 
+                        argument
+                            .WithRefKindKeyword(SyntaxFactory.Token(SyntaxKind.None))
+                            .WithLeadingTrivia(argument.RefKindKeyword.LeadingTrivia);
 
                     documentEditor.ReplaceNode(
-                                            invocationExpression,
-                                            invocationExpression.WithArgumentList(invocationExpression.ArgumentList.ReplaceNode(argument, argument.WithRefKindKeyword(SyntaxFactory.Token(SyntaxKind.None)))));
+                        invocationExpression,
+                        invocationExpression.WithArgumentList(
+                            invocationExpression.ArgumentList.ReplaceNode(
+                                argument,
+                                argumentWithoutRef)));
                 }
 
                 var updatedDocument = documentEditor.GetChangedDocument();
