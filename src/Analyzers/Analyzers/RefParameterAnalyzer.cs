@@ -40,8 +40,13 @@ namespace Acnutech.Analyzers
             //Debugger.Break();
             // https://github.com/PacktPublishing/Roslyn-Cookbook/blob/master/Chapter03/CodeSamples/Recipe%204%20-%20CodeRefactoringProvider/CodeRefactoring.zip
             ParameterSyntax parameterSyntax = (ParameterSyntax)context.Node;
-            var pos = parameterSyntax.Modifiers.IndexOf(SyntaxKind.RefKeyword);
-            if (pos < 0)
+            if(parameterSyntax.Modifiers.Count != 1)
+            {
+                return;
+            }
+
+            var refModifier = parameterSyntax.Modifiers[0];
+            if (refModifier.Kind() != SyntaxKind.RefKeyword)
             {
                 return;
             }
@@ -75,7 +80,7 @@ namespace Acnutech.Analyzers
                     return;
                 }
 
-                context.ReportDiagnostic(Diagnostic.Create(Rule, parameterSyntax.Modifiers[pos].GetLocation(), parameterSyntax.Identifier.Text));
+                context.ReportDiagnostic(Diagnostic.Create(Rule, refModifier.GetLocation(), parameterSyntax.Identifier.Text));
             }
             catch (Exception ex)
             {
