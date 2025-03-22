@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Collections.Immutable;
+﻿using System.Collections.Immutable;
 using System.Composition;
 using System.Linq;
 using System.Threading;
@@ -12,7 +10,7 @@ using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Editing;
 using Microsoft.CodeAnalysis.FindSymbols;
-using Microsoft.CodeAnalysis.Formatting;
+using Microsoft.CodeAnalysis.Text;
 
 
 namespace Acnutech.Analyzers
@@ -64,8 +62,13 @@ namespace Acnutech.Analyzers
                 return document.Project.Solution;
             }
 
+            var parameterTrivia = GetTriviaAfterNodeRemoval(refModifier, parameterSyntax.Type.GetLeadingTrivia());
+
             var newParameter = parameterSyntax.WithModifiers(SyntaxFactory.TokenList())
-                .WithType(parameterSyntax.Type.WithLeadingTrivia(refModifier.LeadingTrivia));
+                .WithType(parameterSyntax.Type.WithLeadingTrivia(parameterTrivia));
+
+            var lengthChange = newParameter.FullSpan.Length - parameterSyntax.FullSpan.Length;
+            var modificationOffset = parameterSyntax.FullSpan.Start;
 
             SyntaxNode oldRoot = await document.GetSyntaxRootAsync(cancellationToken).ConfigureAwait(false);
             SyntaxNode newRoot = oldRoot.ReplaceNode(parameterSyntax, newParameter);
@@ -83,7 +86,7 @@ namespace Acnutech.Analyzers
 
             var solution = document.WithSyntaxRoot(newRoot).Project.Solution;
 
-            int refParemeterIndex = methodDeclarationSyntax.ParameterList.Parameters.IndexOf(parameterSyntax);
+            int refParameterIndex = methodDeclarationSyntax.ParameterList.Parameters.IndexOf(parameterSyntax);
 
             foreach (var documentGroup in methodReferencesByDocument)
             {
@@ -97,28 +100,37 @@ namespace Acnutech.Analyzers
 
                 foreach (var location in documentGroup.OrderByDescending(dg => dg.Location.SourceSpan.Start))
                 {
-                    var referenceRoot = await referenceDocument.GetSyntaxRootAsync(cancellationToken);
-                    var methodIdentifierNode = referenceRoot.FindNode(location.Location.SourceSpan);
+                    var originalSourceSpan = location.Location.SourceSpan;
+                    var sourceSpan =
+                        documentGroup.Key == document.Id && originalSourceSpan.Start > modificationOffset
+                        ? new TextSpan(originalSourceSpan.Start + lengthChange, originalSourceSpan.Length)
+                        : originalSourceSpan;
 
+                    var referenceRoot = await referenceDocument.GetSyntaxRootAsync(cancellationToken);
+                    var methodIdentifierNode = referenceRoot.FindNode(sourceSpan);
+                    
                     var invocationExpression = methodIdentifierNode.FirstAncestorOrSelf<InvocationExpressionSyntax>();
 
                     var arguments = invocationExpression.ArgumentList.Arguments;
-                    if (arguments.Count <= refParemeterIndex)
+                    if (arguments.Count <= refParameterIndex)
                     {
                         continue;
                     }
 
-                    var argument = arguments[refParemeterIndex];
+                    var argument = arguments[refParameterIndex];
 
-                    if (argument.RefKindKeyword.Kind() != SyntaxKind.RefKeyword)
+                    if (argument.RefKindKeyword.Kind() != SyntaxKind.RefKeyword
+                        || !(argument.Expression is IdentifierNameSyntax identifier))
                     {
                         continue;
                     }
 
-                    var argumentWithoutRef = 
+                    var trivia = GetTriviaAfterNodeRemoval(argument.RefKindKeyword, identifier.Identifier.LeadingTrivia);
+
+                    var argumentWithoutRef =
                         argument
                             .WithRefKindKeyword(SyntaxFactory.Token(SyntaxKind.None))
-                            .WithLeadingTrivia(argument.RefKindKeyword.LeadingTrivia);
+                            .WithLeadingTrivia(trivia);
 
                     documentEditor.ReplaceNode(
                         invocationExpression,
@@ -134,5 +146,17 @@ namespace Acnutech.Analyzers
 
             return solution;
         }
+
+        private static SyntaxTriviaList GetTriviaAfterNodeRemoval(SyntaxToken removedNode, SyntaxTriviaList nextLeadingTrivia)
+            => removedNode.LeadingTrivia
+                .AddRange(NonTrivialTrivia(removedNode.TrailingTrivia))
+                .AddRange(nextLeadingTrivia);
+
+        private static SyntaxTriviaList NonTrivialTrivia(SyntaxTriviaList trivia)
+            => trivia.Count == 1
+                && trivia[0].Kind() == SyntaxKind.WhitespaceTrivia
+                && trivia[0].ToString() == " "
+                ? SyntaxFactory.TriviaList()
+                : trivia;
     }
 }

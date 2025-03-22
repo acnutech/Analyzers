@@ -125,6 +125,49 @@ namespace Acnutech.RefParameterAnalyzer.Test
         }
 
         [TestMethod]
+        public async Task PreserveTrivia()
+        {
+            var test = /* lang=c#-test */@"
+    namespace ConsoleApplication1
+    {
+        class Test
+        {
+            void MethodA(int a, 
+                         {|#0:ref|} /*a*/int b,
+                         int c) {}
+
+            void MethodB()
+            {
+                int b = 0;
+                MethodA(1,
+                    /*d*/ref/*c*/ b, 3);
+            }
+        }
+    }";
+
+            var fixtest = /* lang=c#-test */@"
+    namespace ConsoleApplication1
+    {
+        class Test
+        {
+            void MethodA(int a, 
+                          /*a*/int b,
+                         int c) {}
+
+            void MethodB()
+            {
+                int b = 0;
+                MethodA(1,
+                    /*d*//*c*/ b, 3);
+            }
+        }
+    }";
+
+            var expected = VerifyCS.Diagnostic("ACNU0001").WithLocation(0).WithArguments("b");
+            await VerifyCS.VerifyCodeFixAsync(test, expected, fixtest);
+        }
+
+        [TestMethod]
         public async Task UpdateMultipleReferencesToChangedMethod()
         {
             var test = /* lang=c#-test */@"
