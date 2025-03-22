@@ -107,7 +107,7 @@ namespace Acnutech.RefParameterAnalyzer.Test
     {
         class Test
         {
-            void MethodA(int a, 
+            void MethodA(int a,
                          int b,
                          int c) {}
 
@@ -150,7 +150,7 @@ namespace Acnutech.RefParameterAnalyzer.Test
     {
         class Test
         {
-            void MethodA(int a, 
+            void MethodA(int a,
                           /*a*/int b,
                          int c) {}
 
@@ -159,6 +159,43 @@ namespace Acnutech.RefParameterAnalyzer.Test
                 int b = 0;
                 MethodA(1,
                     /*d*//*c*/ b, 3);
+            }
+        }
+    }";
+
+            var expected = VerifyCS.Diagnostic("ACNU0001").WithLocation(0).WithArguments("b");
+            await VerifyCS.VerifyCodeFixAsync(test, expected, fixtest);
+        }
+
+        [TestMethod]
+        public async Task FormatModifiedFragments()
+        {
+            var test = /* lang=c#-test */@"
+    namespace ConsoleApplication1
+    {
+        class Test
+        {
+            void MethodA(int a,  {|#0:ref|}  int b, int c) {}
+
+            void MethodB()
+            {
+                int b = 0;
+                MethodA(1,  ref  b, 3);
+            }
+        }
+    }";
+
+            var fixtest = /* lang=c#-test */@"
+    namespace ConsoleApplication1
+    {
+        class Test
+        {
+            void MethodA(int a, int b, int c) {}
+
+            void MethodB()
+            {
+                int b = 0;
+                MethodA(1, b, 3);
             }
         }
     }";

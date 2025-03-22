@@ -10,7 +10,7 @@ using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Editing;
 using Microsoft.CodeAnalysis.FindSymbols;
-using Microsoft.CodeAnalysis.Text;
+using Microsoft.CodeAnalysis.Formatting;
 
 
 namespace Acnutech.Analyzers
@@ -62,31 +62,20 @@ namespace Acnutech.Analyzers
                 return document.Project.Solution;
             }
 
-            var parameterTrivia = GetTriviaAfterNodeRemoval(refModifier, parameterSyntax.Type.GetLeadingTrivia());
-
-            var newParameter = parameterSyntax.WithModifiers(SyntaxFactory.TokenList())
-                .WithType(parameterSyntax.Type.WithLeadingTrivia(parameterTrivia));
-
-            var lengthChange = newParameter.FullSpan.Length - parameterSyntax.FullSpan.Length;
-            var modificationOffset = parameterSyntax.FullSpan.Start;
-
-            SyntaxNode oldRoot = await document.GetSyntaxRootAsync(cancellationToken).ConfigureAwait(false);
-            SyntaxNode newRoot = oldRoot.ReplaceNode(parameterSyntax, newParameter);
-
             var methodDeclarationSyntax = parameterSyntax.FirstAncestorOrSelf<MethodDeclarationSyntax>();
             var semanticModel = await document.GetSemanticModelAsync(cancellationToken).ConfigureAwait(false);
             var methodSymbol = semanticModel.GetDeclaredSymbol(methodDeclarationSyntax, cancellationToken);
 
-            var methodReferences = await SymbolFinder.FindReferencesAsync(methodSymbol, document.Project.Solution, cancellationToken);
+            int refParameterIndex = methodDeclarationSyntax.ParameterList.Parameters.IndexOf(parameterSyntax);
 
+            var methodReferences = await SymbolFinder.FindReferencesAsync(methodSymbol, document.Project.Solution, cancellationToken);
             var methodReferencesByDocument =
                 methodReferences
-                .SelectMany(r => r.Locations)
-                .GroupBy(l => l.Document.Id);
+                .SelectMany(r => r.Locations.Select(l => (DocumentId: l.Document.Id, l.Location.SourceSpan)))
+                .Append((DocumentId: document.Id, SourceSpan: parameterSyntax.Span))
+                .GroupBy(l => l.DocumentId, l => l.SourceSpan);
 
-            var solution = document.WithSyntaxRoot(newRoot).Project.Solution;
-
-            int refParameterIndex = methodDeclarationSyntax.ParameterList.Parameters.IndexOf(parameterSyntax);
+            var solution = document.Project.Solution;
 
             foreach (var documentGroup in methodReferencesByDocument)
             {
@@ -97,51 +86,65 @@ namespace Acnutech.Analyzers
                 }
 
                 var documentEditor = await DocumentEditor.CreateAsync(referenceDocument, cancellationToken);
+                var referenceRoot = await referenceDocument.GetSyntaxRootAsync(cancellationToken);
 
-                foreach (var location in documentGroup.OrderByDescending(dg => dg.Location.SourceSpan.Start))
+                var spansInEditOrder = documentGroup
+                    .OrderByDescending(sp => sp.Start);
+
+                foreach (var span in spansInEditOrder)
                 {
-                    var originalSourceSpan = location.Location.SourceSpan;
-                    var sourceSpan =
-                        documentGroup.Key == document.Id && originalSourceSpan.Start > modificationOffset
-                        ? new TextSpan(originalSourceSpan.Start + lengthChange, originalSourceSpan.Length)
-                        : originalSourceSpan;
+                    var node = referenceRoot.FindNode(span);
 
-                    var referenceRoot = await referenceDocument.GetSyntaxRootAsync(cancellationToken);
-                    var methodIdentifierNode = referenceRoot.FindNode(sourceSpan);
-                    
-                    var invocationExpression = methodIdentifierNode.FirstAncestorOrSelf<InvocationExpressionSyntax>();
-
-                    var arguments = invocationExpression.ArgumentList.Arguments;
-                    if (arguments.Count <= refParameterIndex)
+                    if (referenceDocument.Id == document.Id && span.Start == parameterSyntax.Span.Start)
                     {
-                        continue;
+                        var parameterSyntax1 = (ParameterSyntax)node;
+
+                        var parameterTrivia = GetTriviaAfterNodeRemoval(refModifier, parameterSyntax1.Type.GetLeadingTrivia());
+
+                        var newParameter = parameterSyntax1.WithModifiers(SyntaxFactory.TokenList())
+                            .WithType(parameterSyntax.Type.WithLeadingTrivia(parameterTrivia))
+                            .WithAdditionalAnnotations(Formatter.Annotation);
+
+                        documentEditor.ReplaceNode(parameterSyntax, newParameter);
+                    }
+                    else
+                    {
+                        var invocationExpression = node.FirstAncestorOrSelf<InvocationExpressionSyntax>();
+
+                        var arguments = invocationExpression.ArgumentList.Arguments;
+                        if (arguments.Count <= refParameterIndex)
+                        {
+                            continue;
+                        }
+
+                        var argument = arguments[refParameterIndex];
+
+                        if (argument.RefKindKeyword.Kind() != SyntaxKind.RefKeyword
+                            || !(argument.Expression is IdentifierNameSyntax identifier))
+                        {
+                            continue;
+                        }
+
+                        var trivia = GetTriviaAfterNodeRemoval(argument.RefKindKeyword, identifier.Identifier.LeadingTrivia);
+
+                        var argumentWithoutRef =
+                            argument
+                                .WithRefKindKeyword(SyntaxFactory.Token(SyntaxKind.None))
+                                .WithLeadingTrivia(trivia)
+                                .WithAdditionalAnnotations(Formatter.Annotation);
+
+                        documentEditor.ReplaceNode(
+                            invocationExpression,
+                            invocationExpression.WithArgumentList(
+                                invocationExpression.ArgumentList.ReplaceNode(
+                                    argument,
+                                    argumentWithoutRef)));
                     }
 
-                    var argument = arguments[refParameterIndex];
-
-                    if (argument.RefKindKeyword.Kind() != SyntaxKind.RefKeyword
-                        || !(argument.Expression is IdentifierNameSyntax identifier))
-                    {
-                        continue;
-                    }
-
-                    var trivia = GetTriviaAfterNodeRemoval(argument.RefKindKeyword, identifier.Identifier.LeadingTrivia);
-
-                    var argumentWithoutRef =
-                        argument
-                            .WithRefKindKeyword(SyntaxFactory.Token(SyntaxKind.None))
-                            .WithLeadingTrivia(trivia);
-
-                    documentEditor.ReplaceNode(
-                        invocationExpression,
-                        invocationExpression.WithArgumentList(
-                            invocationExpression.ArgumentList.ReplaceNode(
-                                argument,
-                                argumentWithoutRef)));
+                    var updatedDocument1 = documentEditor.GetChangedDocument();
+                    var formattedDocument = await Formatter.FormatAsync(updatedDocument1, Formatter.Annotation, cancellationToken: cancellationToken);
+                    solution = formattedDocument.Project.Solution;
                 }
-
-                var updatedDocument = documentEditor.GetChangedDocument();
-                solution = updatedDocument.Project.Solution;
             }
 
             return solution;
