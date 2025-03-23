@@ -59,7 +59,7 @@ namespace Acnutech.Analyzers
             }
 
             var refModifier = parameterSyntax.Modifiers[0];
-            if (refModifier.Kind() != SyntaxKind.RefKeyword)
+            if (!refModifier.IsKind(SyntaxKind.RefKeyword))
             {
                 return document.Project.Solution;
             }
@@ -154,7 +154,7 @@ namespace Acnutech.Analyzers
 
             var argument = arguments[refParameterIndex];
 
-            if (argument.RefKindKeyword.Kind() != SyntaxKind.RefKeyword
+            if (!argument.RefKindKeyword.IsKind(SyntaxKind.RefKeyword)
                 || !(argument.Expression is IdentifierNameSyntax identifier))
             {
                 return;
@@ -183,12 +183,12 @@ namespace Acnutech.Analyzers
 
         private static SyntaxTriviaList NonTrivialTrivia(SyntaxTriviaList trivia)
             => trivia.Count == 1
-                && trivia[0].Kind() == SyntaxKind.WhitespaceTrivia
+                && trivia[0].IsKind(SyntaxKind.WhitespaceTrivia)
                 && trivia[0].ToString() == " "
                 ? SyntaxFactory.TriviaList()
                 : trivia;
 
-        private struct RefParameterInfo
+        private readonly struct RefParameterInfo
         {
             public RefParameterInfo(DocumentId documentId, int parameterSyntaxSpanStart , int refParameterIndex)
             {
