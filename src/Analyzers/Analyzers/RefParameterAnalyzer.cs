@@ -14,7 +14,6 @@ namespace Acnutech.Analyzers
     {
         public const string DiagnosticId = "ACNU0001";
 
-        // You can change these strings in the Resources.resx file. If you do not want your analyzer to be localize-able, you can use regular strings for Title and MessageFormat.
         // See https://github.com/dotnet/roslyn/blob/main/docs/analyzers/Localizing%20Analyzers.md for more on localization
         private static readonly LocalizableString Title = new LocalizableResourceString(nameof(Resources.AnalyzerTitle), Resources.ResourceManager, typeof(Resources));
         private static readonly LocalizableString MessageFormat = new LocalizableResourceString(nameof(Resources.AnalyzerMessageFormat), Resources.ResourceManager, typeof(Resources));
@@ -46,7 +45,7 @@ namespace Acnutech.Analyzers
             }
 
             var refModifier = parameterSyntax.Modifiers[0];
-            if (refModifier.Kind() != SyntaxKind.RefKeyword)
+            if (!refModifier.IsKind(SyntaxKind.RefKeyword))
             {
                 return;
             }
