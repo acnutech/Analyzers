@@ -70,7 +70,7 @@ namespace Acnutech.Analyzers {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to The ref modifier can be removed from the parameter &apos;{0}&apos; .
+        ///   Looks up a localized string similar to The ref modifier can be removed from the parameter &apos;{0}&apos;.
         /// </summary>
         internal static string AnalyzerMessageFormat {
             get {

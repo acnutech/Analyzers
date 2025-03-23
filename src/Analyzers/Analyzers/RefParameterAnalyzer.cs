@@ -46,7 +46,7 @@ namespace Acnutech.Analyzers
             }
 
             var refModifier = parameterSyntax.Modifiers[0];
-            if (refModifier.Kind() != SyntaxKind.RefKeyword)
+            if (!refModifier.IsKind(SyntaxKind.RefKeyword))
             {
                 return;
             }
