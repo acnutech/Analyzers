@@ -12,17 +12,37 @@ namespace Acnutech.Analyzers
     [DiagnosticAnalyzer(LanguageNames.CSharp)]
     public class RefParameterAnalyzer : DiagnosticAnalyzer
     {
-        public const string DiagnosticId = "ACNU0001";
+        internal static class RemoveUnnecessaryRefModifierDiagnostic
+        {
+            internal const string Id = "ACNU0001";
 
-        // See https://github.com/dotnet/roslyn/blob/main/docs/analyzers/Localizing%20Analyzers.md for more on localization
-        private static readonly LocalizableString Title = new LocalizableResourceString(nameof(Resources.AnalyzerTitle), Resources.ResourceManager, typeof(Resources));
-        private static readonly LocalizableString MessageFormat = new LocalizableResourceString(nameof(Resources.AnalyzerMessageFormat), Resources.ResourceManager, typeof(Resources));
-        private static readonly LocalizableString Description = new LocalizableResourceString(nameof(Resources.AnalyzerDescription), Resources.ResourceManager, typeof(Resources));
-        private const string Category = "Usage";
+            // See https://github.com/dotnet/roslyn/blob/main/docs/analyzers/Localizing%20Analyzers.md for more on localization
+            private static readonly LocalizableString Title = GetLocalizableString(nameof(Resources.AnalyzerTitle));
+            private static readonly LocalizableString MessageFormat = GetLocalizableString(nameof(Resources.AnalyzerMessageFormat));
+            private static readonly LocalizableString Description = GetLocalizableString(nameof(Resources.AnalyzerDescription));
+            private const string Category = "Usage";
 
-        private static readonly DiagnosticDescriptor Rule = new DiagnosticDescriptor(DiagnosticId, Title, MessageFormat, Category, DiagnosticSeverity.Warning, isEnabledByDefault: true, description: Description);
+            internal static readonly DiagnosticDescriptor Rule = new DiagnosticDescriptor(Id, Title, MessageFormat, Category, DiagnosticSeverity.Warning, isEnabledByDefault: true, description: Description);
+        }
 
-        public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics { get { return ImmutableArray.Create(Rule); } }
+        internal static class ConvertRefToOutParameterDiagnostic
+        {
+            internal const string Id = "ACNU0002";
+
+            private static readonly LocalizableString Title = GetLocalizableString(nameof(Resources.ConvertRefToOutParameterDiagnostic_Title));
+            private static readonly LocalizableString MessageFormat = GetLocalizableString(nameof(Resources.ConvertRefToOutParameterDiagnostic_MessageFormat));
+            private static readonly LocalizableString Description = GetLocalizableString(nameof(Resources.ConvertRefToOutParameterDiagnostic_Description));
+
+            private const string Category = "Usage";
+
+            internal static readonly DiagnosticDescriptor Rule
+                = new DiagnosticDescriptor(Id, Title, MessageFormat, Category, DiagnosticSeverity.Warning, isEnabledByDefault: true, description: Description);
+        }
+
+        public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics
+            => ImmutableArray.Create(
+                 ConvertRefToOutParameterDiagnostic.Rule,
+                 RemoveUnnecessaryRefModifierDiagnostic.Rule);
 
         public override void Initialize(AnalysisContext context)
         {
@@ -36,10 +56,9 @@ namespace Acnutech.Analyzers
 
         private void AnalyzeMethod(SyntaxNodeAnalysisContext context)
         {
-            //Debugger.Break();
             // https://github.com/PacktPublishing/Roslyn-Cookbook/blob/master/Chapter03/CodeSamples/Recipe%204%20-%20CodeRefactoringProvider/CodeRefactoring.zip
             ParameterSyntax parameterSyntax = (ParameterSyntax)context.Node;
-            if(parameterSyntax.Modifiers.Count != 1)
+            if (parameterSyntax.Modifiers.Count != 1)
             {
                 return;
             }
@@ -72,14 +91,23 @@ namespace Acnutech.Analyzers
                 }
 
                 DataFlowAnalysis dataFlowAnalysis = context.SemanticModel.AnalyzeDataFlow(method.Body);
-
-                ISymbol parameterSymbol = context.SemanticModel.GetDeclaredSymbol(parameterSyntax, context.CancellationToken);
-                if (dataFlowAnalysis.WrittenInside.Contains(parameterSymbol))
+                if (!dataFlowAnalysis.Succeeded)
                 {
                     return;
                 }
 
-                context.ReportDiagnostic(Diagnostic.Create(Rule, refModifier.GetLocation(), parameterSyntax.Identifier.Text));
+                ISymbol parameterSymbol = context.SemanticModel.GetDeclaredSymbol(parameterSyntax, context.CancellationToken);
+                if (!dataFlowAnalysis.WrittenInside.Contains(parameterSymbol))
+                {
+                    context.ReportDiagnostic(Diagnostic.Create(RemoveUnnecessaryRefModifierDiagnostic.Rule, refModifier.GetLocation(), parameterSyntax.Identifier.Text));
+                    return;
+                }
+
+                if (dataFlowAnalysis.AlwaysAssigned.Contains(parameterSymbol)
+                    && !dataFlowAnalysis.DataFlowsIn.Contains(parameterSymbol))
+                {
+                    context.ReportDiagnostic(Diagnostic.Create(ConvertRefToOutParameterDiagnostic.Rule, refModifier.GetLocation(), parameterSyntax.Identifier.Text));
+                }
             }
             catch (Exception ex)
             {
@@ -90,7 +118,7 @@ namespace Acnutech.Analyzers
 
         private bool ImplementsInterfaceImplicitly(IMethodSymbol methodSymbol)
         {
-            if(methodSymbol.DeclaredAccessibility == Accessibility.Private
+            if (methodSymbol.DeclaredAccessibility == Accessibility.Private
                 || methodSymbol.DeclaredAccessibility == Accessibility.NotApplicable)
             {
                 return false;
@@ -109,5 +137,8 @@ namespace Acnutech.Analyzers
             }
             return false;
         }
+
+        private static LocalizableResourceString GetLocalizableString(string name)
+            => new LocalizableResourceString(name, Resources.ResourceManager, typeof(Resources));
     }
 }

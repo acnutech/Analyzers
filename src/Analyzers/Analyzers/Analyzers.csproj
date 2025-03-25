@@ -7,12 +7,14 @@
     <!-- Avoid ID conflicts with the package project. -->
     <PackageId>*$(MSBuildProjectFile)*</PackageId>
     <RootNamespace>Acnutech.Analyzers</RootNamespace>
-  </PropertyGroup>
-
-  <PropertyGroup>
     <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
   </PropertyGroup>
 
+  <ItemGroup>
+    <InternalsVisibleTo Include="Analyzers.CodeFixes" />
+    <InternalsVisibleTo Include="Analyzers.Test" />
+  </ItemGroup>
+  
   <ItemGroup>
     <AdditionalFiles Include="AnalyzerReleases.Shipped.md" />
     <AdditionalFiles Include="AnalyzerReleases.Unshipped.md" />

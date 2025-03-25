@@ -121,12 +121,24 @@
     <value>Parameters do not need ref modifier if their value is not changed (e.g. they are not assigned a different value).</value>
     <comment>An optional longer localizable description of the diagnostic.</comment>
   </data>
+  <data name="ConvertRefToOutParameterDiagnostic_Description" xml:space="preserve">
+    <value>Detects when a ref parameter's original value is never read before being assigned, suggesting replacement with an out parameter for clearer intent and better semantics.</value>
+    <comment>An optional longer localizable description of the diagnostic.</comment>
+  </data>
   <data name="AnalyzerMessageFormat" xml:space="preserve">
-    <value>The ref modifier can be removed from the parameter '{0}'</value>
+    <value>Parameter '{0}' is passed by 'ref' but is never modified. Remove the 'ref' modifier to simplify the API.</value>
     <comment>The format-able message the diagnostic displays.</comment>
   </data>
   <data name="AnalyzerTitle" xml:space="preserve">
     <value>Parameter does not need its ref modifier</value>
     <comment>The title of the diagnostic.</comment>
+  </data>
+  <data name="ConvertRefToOutParameterDiagnostic_Title" xml:space="preserve">
+    <value>Replace 'ref' with 'out' when the original parameter value is unused</value>
+    <comment>The title of the diagnostic.</comment>
+  </data>
+  <data name="ConvertRefToOutParameterDiagnostic_MessageFormat" xml:space="preserve">
+    <value>Parameter '{0}' is passed by 'ref' but its original value is never read. Consider using 'out' instead for clearer intent.</value>
+    <comment>The format-able message the diagnostic displays.</comment>
   </data>
 </root>

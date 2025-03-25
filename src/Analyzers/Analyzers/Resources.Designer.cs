@@ -70,7 +70,7 @@ namespace Acnutech.Analyzers {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to The ref modifier can be removed from the parameter &apos;{0}&apos;.
+        ///   Looks up a localized string similar to Parameter &apos;{0}&apos; is passed by &apos;ref&apos; but is never modified. Remove the &apos;ref&apos; modifier to simplify the API..
         /// </summary>
         internal static string AnalyzerMessageFormat {
             get {
@@ -84,6 +84,33 @@ namespace Acnutech.Analyzers {
         internal static string AnalyzerTitle {
             get {
                 return ResourceManager.GetString("AnalyzerTitle", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Detects when a ref parameter&apos;s original value is never read before being assigned, suggesting replacement with an out parameter for clearer intent and better semantics..
+        /// </summary>
+        internal static string ConvertRefToOutParameterDiagnostic_Description {
+            get {
+                return ResourceManager.GetString("ConvertRefToOutParameterDiagnostic_Description", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Parameter &apos;{0}&apos; is passed by &apos;ref&apos; but its original value is never read. Consider using &apos;out&apos; instead for clearer intent..
+        /// </summary>
+        internal static string ConvertRefToOutParameterDiagnostic_MessageFormat {
+            get {
+                return ResourceManager.GetString("ConvertRefToOutParameterDiagnostic_MessageFormat", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Replace &apos;ref&apos; with &apos;out&apos; when the original parameter value is unused.
+        /// </summary>
+        internal static string ConvertRefToOutParameterDiagnostic_Title {
+            get {
+                return ResourceManager.GetString("ConvertRefToOutParameterDiagnostic_Title", resourceCulture);
             }
         }
     }

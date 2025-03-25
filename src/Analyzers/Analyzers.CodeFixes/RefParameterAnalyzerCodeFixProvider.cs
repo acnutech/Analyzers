@@ -1,6 +1,4 @@
 ﻿using System.Collections.Generic;
-using System.Collections.Immutable;
-using System.Composition;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -17,19 +15,17 @@ using Microsoft.CodeAnalysis.Text;
 
 namespace Acnutech.Analyzers
 {
-    [ExportCodeFixProvider(LanguageNames.CSharp, Name = nameof(RefParameterAnalyzerCodeFixProvider)), Shared]
-    public class RefParameterAnalyzerCodeFixProvider : CodeFixProvider
+    public abstract class RefParameterAnalyzerCodeFixProvider : CodeFixProvider
     {
-        public sealed override ImmutableArray<string> FixableDiagnosticIds
-        {
-            get { return ImmutableArray.Create(RefParameterAnalyzer.DiagnosticId); }
-        }
 
         public sealed override FixAllProvider GetFixAllProvider()
         {
             // See https://github.com/dotnet/roslyn/blob/main/docs/analyzers/FixAllProvider.md for more information on Fix All Providers
             return WellKnownFixAllProviders.BatchFixer;
         }
+
+        protected abstract string Title { get; }
+        protected abstract string EquivalenceKey { get; }
 
         public sealed override async Task RegisterCodeFixesAsync(CodeFixContext context)
         {
@@ -45,9 +41,9 @@ namespace Acnutech.Analyzers
             // Register a code action that will invoke the fix.
             context.RegisterCodeFix(
                 CodeAction.Create(
-                    title: CodeFixResources.CodeFixTitle,
+                    title: Title,
                     createChangedSolution: c => RemoveRefModifier(context.Document, declaration, c),
-                    equivalenceKey: nameof(CodeFixResources.CodeFixTitle)),
+                    equivalenceKey: EquivalenceKey),
                 diagnostic);
         }
 
@@ -90,7 +86,7 @@ namespace Acnutech.Analyzers
             return solution;
         }
 
-        private static async Task<Solution> UpdateDocument(
+        private async Task<Solution> UpdateDocument(
             Solution solution,
             DocumentId documentId,
             IEnumerable<TextSpan> spans,
@@ -128,69 +124,13 @@ namespace Acnutech.Analyzers
             return formattedDocument.Project.Solution;
         }
 
-        private static void UpdateRefParameter(DocumentEditor documentEditor, SyntaxNode node)
-        {
-            var parameterSyntax1 = (ParameterSyntax)node;
+        protected abstract void UpdateRefParameter(DocumentEditor documentEditor, SyntaxNode node);
 
-            var refModifier1 = parameterSyntax1.Modifiers[0];
-            var parameterTrivia = GetTriviaAfterNodeRemoval(refModifier1, parameterSyntax1.Type.GetLeadingTrivia());
-
-            var newParameter = parameterSyntax1.WithModifiers(SyntaxFactory.TokenList())
-                .WithType(parameterSyntax1.Type.WithLeadingTrivia(parameterTrivia))
-                .WithAdditionalAnnotations(Formatter.Annotation);
-
-            documentEditor.ReplaceNode(node, newParameter);
-        }
-
-        private static void UpdateRefArgument(DocumentEditor documentEditor, SyntaxNode node, int refParameterIndex)
-        {
-            var invocationExpression = node.FirstAncestorOrSelf<InvocationExpressionSyntax>();
-
-            var arguments = invocationExpression.ArgumentList.Arguments;
-            if (arguments.Count <= refParameterIndex)
-            {
-                return;
-            }
-
-            var argument = arguments[refParameterIndex];
-
-            if (!argument.RefKindKeyword.IsKind(SyntaxKind.RefKeyword)
-                || !(argument.Expression is IdentifierNameSyntax identifier))
-            {
-                return;
-            }
-
-            var trivia = GetTriviaAfterNodeRemoval(argument.RefKindKeyword, identifier.Identifier.LeadingTrivia);
-
-            var argumentWithoutRef =
-                argument
-                    .WithRefKindKeyword(SyntaxFactory.Token(SyntaxKind.None))
-                    .WithLeadingTrivia(trivia)
-                    .WithAdditionalAnnotations(Formatter.Annotation);
-
-            documentEditor.ReplaceNode(
-                invocationExpression,
-                invocationExpression.WithArgumentList(
-                    invocationExpression.ArgumentList.ReplaceNode(
-                        argument,
-                        argumentWithoutRef)));
-        }
-
-        private static SyntaxTriviaList GetTriviaAfterNodeRemoval(SyntaxToken removedNode, SyntaxTriviaList nextLeadingTrivia)
-            => removedNode.LeadingTrivia
-                .AddRange(NonTrivialTrivia(removedNode.TrailingTrivia))
-                .AddRange(nextLeadingTrivia);
-
-        private static SyntaxTriviaList NonTrivialTrivia(SyntaxTriviaList trivia)
-            => trivia.Count == 1
-                && trivia[0].IsKind(SyntaxKind.WhitespaceTrivia)
-                && trivia[0].ToString() == " "
-                ? SyntaxFactory.TriviaList()
-                : trivia;
+        protected abstract void UpdateRefArgument(DocumentEditor documentEditor, SyntaxNode node, int refParameterIndex);
 
         private readonly struct RefParameterInfo
         {
-            public RefParameterInfo(DocumentId documentId, int parameterSyntaxSpanStart , int refParameterIndex)
+            public RefParameterInfo(DocumentId documentId, int parameterSyntaxSpanStart, int refParameterIndex)
             {
                 DocumentId = documentId;
                 ParameterSyntaxSpanStart = parameterSyntaxSpanStart;
