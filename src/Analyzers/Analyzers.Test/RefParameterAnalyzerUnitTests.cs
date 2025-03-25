@@ -2,9 +2,12 @@
 using Microsoft.CodeAnalysis.CSharp.Testing;
 using Microsoft.CodeAnalysis.Testing;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using VerifyCS = Microsoft.CodeAnalysis.CSharp.Testing.CSharpCodeFixVerifier<
+using VerifyRemoveUnnecessaryRefModifier = Microsoft.CodeAnalysis.CSharp.Testing.CSharpCodeFixVerifier<
     Acnutech.Analyzers.RefParameterAnalyzer,
-    Acnutech.Analyzers.RefParameterAnalyzerCodeFixProvider, Microsoft.CodeAnalysis.Testing.DefaultVerifier>;
+    Acnutech.Analyzers.RemoveUnnecessaryRefModifierCodeFixProvider, Microsoft.CodeAnalysis.Testing.DefaultVerifier>;
+using VerifyConvertRefToOutParameter = Microsoft.CodeAnalysis.CSharp.Testing.CSharpCodeFixVerifier<
+    Acnutech.Analyzers.RefParameterAnalyzer,
+    Acnutech.Analyzers.ConvertRefToOutParameterCodeFixProvider, Microsoft.CodeAnalysis.Testing.DefaultVerifier>;
 
 namespace Acnutech.Analyzers.Test;
 
@@ -16,7 +19,7 @@ public class RefParameterAnalyzerUnitTest
     {
         var test = @"";
 
-        await VerifyCS.VerifyAnalyzerAsync(test);
+        await VerifyRemoveUnnecessaryRefModifier.VerifyAnalyzerAsync(test);
     }
 
     [TestMethod]
@@ -40,8 +43,8 @@ public class RefParameterAnalyzerUnitTest
         }
     }";
 
-        var expected = VerifyCS.Diagnostic(RefParameterAnalyzer.RemoveUnnecessaryRefModifierDiagnostic.Rule).WithLocation(0).WithArguments("a");
-        await VerifyCS.VerifyCodeFixAsync(test, expected, codeFixTest);
+        var expected = VerifyRemoveUnnecessaryRefModifier.Diagnostic(RefParameterAnalyzer.RemoveUnnecessaryRefModifierDiagnostic.Rule).WithLocation(0).WithArguments("a");
+        await VerifyRemoveUnnecessaryRefModifier.VerifyCodeFixAsync(test, expected, codeFixTest);
     }
 
     [TestMethod]
@@ -77,8 +80,8 @@ public class RefParameterAnalyzerUnitTest
         }
     }";
 
-        var expected = VerifyCS.Diagnostic(RefParameterAnalyzer.RemoveUnnecessaryRefModifierDiagnostic.Rule).WithLocation(0).WithArguments("a");
-        await VerifyCS.VerifyCodeFixAsync(test, expected, codeFixTest);
+        var expected = VerifyRemoveUnnecessaryRefModifier.Diagnostic(RefParameterAnalyzer.RemoveUnnecessaryRefModifierDiagnostic.Rule).WithLocation(0).WithArguments("a");
+        await VerifyRemoveUnnecessaryRefModifier.VerifyCodeFixAsync(test, expected, codeFixTest);
     }
 
     [TestMethod]
@@ -120,8 +123,8 @@ public class RefParameterAnalyzerUnitTest
         }
     }";
 
-        var expected = VerifyCS.Diagnostic(RefParameterAnalyzer.RemoveUnnecessaryRefModifierDiagnostic.Rule).WithLocation(0).WithArguments("b");
-        await VerifyCS.VerifyCodeFixAsync(test, expected, codeFixTest);
+        var expected = VerifyRemoveUnnecessaryRefModifier.Diagnostic(RefParameterAnalyzer.RemoveUnnecessaryRefModifierDiagnostic.Rule).WithLocation(0).WithArguments("b");
+        await VerifyRemoveUnnecessaryRefModifier.VerifyCodeFixAsync(test, expected, codeFixTest);
     }
 
     [TestMethod]
@@ -163,8 +166,8 @@ public class RefParameterAnalyzerUnitTest
         }
     }";
 
-        var expected = VerifyCS.Diagnostic(RefParameterAnalyzer.RemoveUnnecessaryRefModifierDiagnostic.Rule).WithLocation(0).WithArguments("b");
-        await VerifyCS.VerifyCodeFixAsync(test, expected, codeFixTest);
+        var expected = VerifyRemoveUnnecessaryRefModifier.Diagnostic(RefParameterAnalyzer.RemoveUnnecessaryRefModifierDiagnostic.Rule).WithLocation(0).WithArguments("b");
+        await VerifyRemoveUnnecessaryRefModifier.VerifyCodeFixAsync(test, expected, codeFixTest);
     }
 
     [TestMethod]
@@ -200,8 +203,8 @@ public class RefParameterAnalyzerUnitTest
         }
     }";
 
-        var expected = VerifyCS.Diagnostic(RefParameterAnalyzer.RemoveUnnecessaryRefModifierDiagnostic.Rule).WithLocation(0).WithArguments("b");
-        await VerifyCS.VerifyCodeFixAsync(test, expected, codeFixTest);
+        var expected = VerifyRemoveUnnecessaryRefModifier.Diagnostic(RefParameterAnalyzer.RemoveUnnecessaryRefModifierDiagnostic.Rule).WithLocation(0).WithArguments("b");
+        await VerifyRemoveUnnecessaryRefModifier.VerifyCodeFixAsync(test, expected, codeFixTest);
     }
 
     [TestMethod]
@@ -247,8 +250,8 @@ public class RefParameterAnalyzerUnitTest
         }
     }";
 
-        var expected = VerifyCS.Diagnostic(RefParameterAnalyzer.RemoveUnnecessaryRefModifierDiagnostic.Rule).WithLocation(0).WithArguments("a");
-        await VerifyCS.VerifyCodeFixAsync(test, expected, codeFixTest);
+        var expected = VerifyRemoveUnnecessaryRefModifier.Diagnostic(RefParameterAnalyzer.RemoveUnnecessaryRefModifierDiagnostic.Rule).WithLocation(0).WithArguments("a");
+        await VerifyRemoveUnnecessaryRefModifier.VerifyCodeFixAsync(test, expected, codeFixTest);
     }
 
     [TestMethod]
@@ -268,7 +271,7 @@ public class RefParameterAnalyzerUnitTest
         }
     }";
 
-        await VerifyCS.VerifyAnalyzerAsync(test);
+        await VerifyRemoveUnnecessaryRefModifier.VerifyAnalyzerAsync(test);
     }
 
     [TestMethod]
@@ -288,7 +291,7 @@ public class RefParameterAnalyzerUnitTest
         }
     }";
 
-        await VerifyCS.VerifyAnalyzerAsync(test);
+        await VerifyRemoveUnnecessaryRefModifier.VerifyAnalyzerAsync(test);
     }
 
     [TestMethod]
@@ -308,7 +311,7 @@ public class RefParameterAnalyzerUnitTest
         }
     }";
 
-        await VerifyCS.VerifyAnalyzerAsync(test);
+        await VerifyRemoveUnnecessaryRefModifier.VerifyAnalyzerAsync(test);
     }
 
     [TestMethod]
@@ -325,7 +328,7 @@ public class RefParameterAnalyzerUnitTest
         }
     }";
 
-        await VerifyCS.VerifyAnalyzerAsync(test);
+        await VerifyRemoveUnnecessaryRefModifier.VerifyAnalyzerAsync(test);
     }
 
     [TestMethod]
@@ -341,7 +344,7 @@ public class RefParameterAnalyzerUnitTest
         }
     }";
 
-        await VerifyCS.VerifyAnalyzerAsync(test);
+        await VerifyRemoveUnnecessaryRefModifier.VerifyAnalyzerAsync(test);
     }
 
     [TestMethod]
@@ -355,11 +358,11 @@ public class RefParameterAnalyzerUnitTest
             }
 }";
 
-        await VerifyCS.VerifyAnalyzerAsync(test);
+        await VerifyRemoveUnnecessaryRefModifier.VerifyAnalyzerAsync(test);
     }
 
     [TestMethod]
-    public async Task MultipleModifiers_IsOmitted()
+    public async Task MultipleModifiers_IgnoredByRefAnalyzers()
     {
         var source = /* lang=c#-test */"""
             class Test
@@ -383,7 +386,7 @@ public class RefParameterAnalyzerUnitTest
     }
 
     [TestMethod]
-    public async Task RefParameterToOut_IsFixable()
+    public async Task RefParameterToOut_MarksParametersOnlyWritten()
     {
         var test = /* lang=c#-test */"""
             namespace ConsoleApplication1
@@ -397,51 +400,120 @@ public class RefParameterAnalyzerUnitTest
             }
             """;
 
-        var expected = VerifyCS.Diagnostic(RefParameterAnalyzer.ConvertRefToOutParameterDiagnostic.Rule).WithLocation(0).WithArguments("a");
-        await VerifyCS.VerifyAnalyzerAsync(test, expected);
-    }
-
-
-    [TestMethod]
-    public async Task RefParameterToOut_IsFixable2()
-    {
-        var test = /* lang=c#-test */"""
+        var codeFixResult = /* lang=c#-test */"""
             namespace ConsoleApplication1
             {
                 class Test
                 {
-                    void MethodA(ref int a) {
-                        int b = a;
+                    void MethodA(out int a) {
                         a = 0;
                     }
                 }
             }
             """;
 
-
-        await VerifyCS.VerifyAnalyzerAsync(test);
+        var expected = VerifyConvertRefToOutParameter.Diagnostic(RefParameterAnalyzer.ConvertRefToOutParameterDiagnostic.Rule).WithLocation(0).WithArguments("a");
+        await VerifyConvertRefToOutParameter.VerifyCodeFixAsync(test, expected, codeFixResult);
     }
 
+
     [TestMethod]
-    public async Task RefParameterToOut_IsFixable3()
+    public async Task RefParameterToOut_OmitsReadFirstParameters()
     {
         var test = /* lang=c#-test */"""
-            namespace ConsoleApplication1
+            class Test
             {
-                class Test
-                {
-                    void MethodA({|#0:ref|} int a, ref int b) {
-                        a = 0;
-                        System.Console.WriteLine(a);
-                        System.Console.WriteLine(b);
-                        b = 0;
-                    }
+                void MethodA(ref int a) {
+                    int b = a;
+                    a = 0;
                 }
             }
             """;
 
+        await VerifyConvertRefToOutParameter.VerifyAnalyzerAsync(test);
+    }
 
-        var expected = VerifyCS.Diagnostic(RefParameterAnalyzer.ConvertRefToOutParameterDiagnostic.Rule).WithLocation(0).WithArguments("a");
-        await VerifyCS.VerifyAnalyzerAsync(test, expected);
+    [TestMethod]
+    public async Task RefParameterToOut_MarksAssignedFirstParameters()
+    {
+        var test = /* lang=c#-test */"""
+            class Test
+            {
+                void MethodA({|#0:ref|} int a, ref int b) {
+                    a = 0;
+                    System.Console.WriteLine(a);
+                    System.Console.WriteLine(b);
+                    b = 0;
+                }
+            
+                void MethodB() {
+                    int k = 0, m = 1;
+                    MethodA(ref k, ref m);
+                }
+            }
+            """;
+
+        var fixedSource = /* lang=c#-test */"""
+            class Test
+            {
+                void MethodA(out int a, ref int b) {
+                    a = 0;
+                    System.Console.WriteLine(a);
+                    System.Console.WriteLine(b);
+                    b = 0;
+                }
+
+                void MethodB() {
+                    int k = 0, m = 1;
+                    MethodA(out k, ref m);
+                }
+            }
+            """;
+
+        var expected = VerifyConvertRefToOutParameter.Diagnostic(RefParameterAnalyzer.ConvertRefToOutParameterDiagnostic.Rule).WithLocation(0).WithArguments("a");
+        await VerifyConvertRefToOutParameter.VerifyCodeFixAsync(test, expected, fixedSource);
+    }
+    
+    [TestMethod]
+    public async Task RefParameterToOut_PreservesTrivia()
+    {
+        var test = /* lang=c#-test */"""
+            class Test
+            {
+                void MethodA(
+                    {|#0:ref|} /*a*/
+                    int a) {
+                    a = 0;
+                }
+            
+                void MethodB() {
+                    int k = 0;
+                    MethodA(
+                        ref  /* a */
+                        k);
+                }
+            }
+            """;
+
+        var fixedSource = /* lang=c#-test */"""
+            class Test
+            {
+                void MethodA(
+                    out /*a*/
+                    int a) {
+                    a = 0;
+                }
+            
+                void MethodB() {
+                    int k = 0;
+                    MethodA(
+                        out  /* a */
+                        k);
+                }
+            }
+            """;
+
+        var expected = VerifyConvertRefToOutParameter.Diagnostic(RefParameterAnalyzer.ConvertRefToOutParameterDiagnostic.Rule).WithLocation(0).WithArguments("a");
+        await VerifyConvertRefToOutParameter.VerifyCodeFixAsync(test, expected, fixedSource);
     }
 }
