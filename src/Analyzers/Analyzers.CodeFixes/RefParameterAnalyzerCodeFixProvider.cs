@@ -22,7 +22,7 @@ namespace Acnutech.Analyzers
     {
         public sealed override ImmutableArray<string> FixableDiagnosticIds
         {
-            get { return ImmutableArray.Create(RefParameterAnalyzer.DiagnosticId); }
+            get { return ImmutableArray.Create(RefParameterAnalyzer.RemoveUnnecessaryRefModifierDiagnostic.Id); }
         }
 
         public sealed override FixAllProvider GetFixAllProvider()

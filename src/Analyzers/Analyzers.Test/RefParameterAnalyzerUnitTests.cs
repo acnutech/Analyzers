@@ -27,7 +27,7 @@ public class RefParameterAnalyzerUnitTest
     {
         class Test
         {
-            void MethodA({|#0:ref|} int a) {}
+            void MethodA({|#0:ref|} int a) { System.Console.WriteLine(a); }
         }
     }";
 
@@ -36,11 +36,11 @@ public class RefParameterAnalyzerUnitTest
     {
         class Test
         {
-            void MethodA(int a) {}
+            void MethodA(int a) { System.Console.WriteLine(a); }
         }
     }";
 
-        var expected = VerifyCS.Diagnostic("ACNU0001").WithLocation(0).WithArguments("a");
+        var expected = VerifyCS.Diagnostic(RefParameterAnalyzer.RemoveUnnecessaryRefModifierDiagnostic.Rule).WithLocation(0).WithArguments("a");
         await VerifyCS.VerifyCodeFixAsync(test, expected, codeFixTest);
     }
 
@@ -77,7 +77,7 @@ public class RefParameterAnalyzerUnitTest
         }
     }";
 
-        var expected = VerifyCS.Diagnostic("ACNU0001").WithLocation(0).WithArguments("a");
+        var expected = VerifyCS.Diagnostic(RefParameterAnalyzer.RemoveUnnecessaryRefModifierDiagnostic.Rule).WithLocation(0).WithArguments("a");
         await VerifyCS.VerifyCodeFixAsync(test, expected, codeFixTest);
     }
 
@@ -91,7 +91,7 @@ public class RefParameterAnalyzerUnitTest
         {
             void MethodA(int a, 
                          {|#0:ref|} int b,
-                         int c) {}
+                         int c) { c = b; }
 
             void MethodB()
             {
@@ -109,7 +109,7 @@ public class RefParameterAnalyzerUnitTest
         {
             void MethodA(int a,
                          int b,
-                         int c) {}
+                         int c) { c = b; }
 
             void MethodB()
             {
@@ -120,7 +120,7 @@ public class RefParameterAnalyzerUnitTest
         }
     }";
 
-        var expected = VerifyCS.Diagnostic("ACNU0001").WithLocation(0).WithArguments("b");
+        var expected = VerifyCS.Diagnostic(RefParameterAnalyzer.RemoveUnnecessaryRefModifierDiagnostic.Rule).WithLocation(0).WithArguments("b");
         await VerifyCS.VerifyCodeFixAsync(test, expected, codeFixTest);
     }
 
@@ -134,7 +134,7 @@ public class RefParameterAnalyzerUnitTest
         {
             void MethodA(int a, 
                          {|#0:ref|} /*a*/int b,
-                         int c) {}
+                         int c) { c = b; }
 
             void MethodB()
             {
@@ -152,7 +152,7 @@ public class RefParameterAnalyzerUnitTest
         {
             void MethodA(int a,
                           /*a*/int b,
-                         int c) {}
+                         int c) { c = b; }
 
             void MethodB()
             {
@@ -163,7 +163,7 @@ public class RefParameterAnalyzerUnitTest
         }
     }";
 
-        var expected = VerifyCS.Diagnostic("ACNU0001").WithLocation(0).WithArguments("b");
+        var expected = VerifyCS.Diagnostic(RefParameterAnalyzer.RemoveUnnecessaryRefModifierDiagnostic.Rule).WithLocation(0).WithArguments("b");
         await VerifyCS.VerifyCodeFixAsync(test, expected, codeFixTest);
     }
 
@@ -200,7 +200,7 @@ public class RefParameterAnalyzerUnitTest
         }
     }";
 
-        var expected = VerifyCS.Diagnostic("ACNU0001").WithLocation(0).WithArguments("b");
+        var expected = VerifyCS.Diagnostic(RefParameterAnalyzer.RemoveUnnecessaryRefModifierDiagnostic.Rule).WithLocation(0).WithArguments("b");
         await VerifyCS.VerifyCodeFixAsync(test, expected, codeFixTest);
     }
 
@@ -247,7 +247,7 @@ public class RefParameterAnalyzerUnitTest
         }
     }";
 
-        var expected = VerifyCS.Diagnostic("ACNU0001").WithLocation(0).WithArguments("a");
+        var expected = VerifyCS.Diagnostic(RefParameterAnalyzer.RemoveUnnecessaryRefModifierDiagnostic.Rule).WithLocation(0).WithArguments("a");
         await VerifyCS.VerifyCodeFixAsync(test, expected, codeFixTest);
     }
 
@@ -320,7 +320,7 @@ public class RefParameterAnalyzerUnitTest
         class Test
         {
             void MethodA(ref int a) {
-                a = 1;
+                a = a;
             }
         }
     }";
@@ -380,5 +380,68 @@ public class RefParameterAnalyzerUnitTest
             }
 
         }.RunAsync();
+    }
+
+    [TestMethod]
+    public async Task RefParameterToOut_IsFixable()
+    {
+        var test = /* lang=c#-test */"""
+            namespace ConsoleApplication1
+            {
+                class Test
+                {
+                    void MethodA({|#0:ref|} int a) {
+                        a = 0;
+                    }
+                }
+            }
+            """;
+
+        var expected = VerifyCS.Diagnostic(RefParameterAnalyzer.ConvertRefToOutParameterDiagnostic.Rule).WithLocation(0).WithArguments("a");
+        await VerifyCS.VerifyAnalyzerAsync(test, expected);
+    }
+
+
+    [TestMethod]
+    public async Task RefParameterToOut_IsFixable2()
+    {
+        var test = /* lang=c#-test */"""
+            namespace ConsoleApplication1
+            {
+                class Test
+                {
+                    void MethodA(ref int a) {
+                        int b = a;
+                        a = 0;
+                    }
+                }
+            }
+            """;
+
+
+        await VerifyCS.VerifyAnalyzerAsync(test);
+    }
+
+    [TestMethod]
+    public async Task RefParameterToOut_IsFixable3()
+    {
+        var test = /* lang=c#-test */"""
+            namespace ConsoleApplication1
+            {
+                class Test
+                {
+                    void MethodA({|#0:ref|} int a, ref int b) {
+                        a = 0;
+                        System.Console.WriteLine(a);
+                        System.Console.WriteLine(b);
+                        b = 0;
+                    }
+                }
+            }
+            """;
+
+
+        var expected = VerifyCS.Diagnostic(RefParameterAnalyzer.ConvertRefToOutParameterDiagnostic.Rule).WithLocation(0).WithArguments("a");
+        await VerifyCS.VerifyAnalyzerAsync(test, expected);
     }
 }
