@@ -12,4 +12,4 @@ ACNU0001 |  Usage   |  Warning | RemoveUnnecessaryRefModifier, [Documentation](R
 
 Rule ID  | Category | Severity | Notes
 ---------|----------|----------|--------------------
-ACNU0002 |  Usage   |  Warning | ConvertRefToOutParameter, [Documentation](ConvertRefToOutParameterDiagnostic)
+ACNU0002 |  Usage   |  Info    | ConvertRefToOutParameter, [Documentation](ConvertRefToOutParameterDiagnostic)

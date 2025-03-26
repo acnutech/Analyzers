@@ -16,9 +16,9 @@ namespace Acnutech.Analyzers
             get { return ImmutableArray.Create(RefParameterAnalyzer.ConvertRefToOutParameterDiagnostic.Id); }
         }
 
-        protected override string Title => "aa";
+        protected override string Title => CodeFixResources.ConvertRefToOutParameterCodeFixTitle;
 
-        protected override string EquivalenceKey => "bgb";
+        protected override string EquivalenceKey => nameof(CodeFixResources.ConvertRefToOutParameterCodeFixTitle);
 
         protected override void UpdateRefParameter(DocumentEditor documentEditor, SyntaxNode node)
         {

@@ -61,11 +61,20 @@ namespace Acnutech.Analyzers {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Convert ref to out parameter.
+        /// </summary>
+        internal static string ConvertRefToOutParameterCodeFixTitle {
+            get {
+                return ResourceManager.GetString("ConvertRefToOutParameterCodeFixTitle", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Remove the ref modifier.
         /// </summary>
-        internal static string CodeFixTitle {
+        internal static string RemoveRefModifierCodeFixTitle {
             get {
-                return ResourceManager.GetString("CodeFixTitle", resourceCulture);
+                return ResourceManager.GetString("RemoveRefModifierCodeFixTitle", resourceCulture);
             }
         }
     }
