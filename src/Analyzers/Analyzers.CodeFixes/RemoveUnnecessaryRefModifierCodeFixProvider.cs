@@ -17,9 +17,9 @@ namespace Acnutech.Analyzers
             get { return ImmutableArray.Create(RefParameterAnalyzer.RemoveUnnecessaryRefModifierDiagnostic.Id); }
         }
 
-        protected override string Title => CodeFixResources.CodeFixTitle;
+        protected override string Title => CodeFixResources.RemoveRefModifierCodeFixTitle;
 
-        protected override string EquivalenceKey => nameof(CodeFixResources.CodeFixTitle);
+        protected override string EquivalenceKey => nameof(CodeFixResources.RemoveRefModifierCodeFixTitle);
 
         protected override void UpdateRefParameter(DocumentEditor documentEditor, SyntaxNode node)
         {

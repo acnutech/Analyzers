@@ -117,8 +117,12 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
-  <data name="CodeFixTitle" xml:space="preserve">
+  <data name="RemoveRefModifierCodeFixTitle" xml:space="preserve">
     <value>Remove the ref modifier</value>
+    <comment>The title of the code fix.</comment>
+  </data>
+  <data name="ConvertRefToOutParameterCodeFixTitle" xml:space="preserve">
+    <value>Convert ref to out parameter</value>
     <comment>The title of the code fix.</comment>
   </data>
 </root>

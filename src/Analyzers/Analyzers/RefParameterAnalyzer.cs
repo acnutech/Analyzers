@@ -36,7 +36,7 @@ namespace Acnutech.Analyzers
             private const string Category = "Usage";
 
             internal static readonly DiagnosticDescriptor Rule
-                = new DiagnosticDescriptor(Id, Title, MessageFormat, Category, DiagnosticSeverity.Warning, isEnabledByDefault: true, description: Description);
+                = new DiagnosticDescriptor(Id, Title, MessageFormat, Category, DiagnosticSeverity.Info, isEnabledByDefault: true, description: Description);
         }
 
         public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics
