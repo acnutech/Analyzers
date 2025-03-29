@@ -125,4 +125,8 @@
     <value>Convert ref to out parameter</value>
     <comment>The title of the code fix.</comment>
   </data>
+  <data name="DuplicateMethodCallCodeFixTitle" xml:space="preserve">
+    <value>Replace with a single method call using a conditional expression for unmatched argument.</value>
+    <comment>The title of the code fix.</comment>
+  </data>
 </root>

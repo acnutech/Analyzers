@@ -113,5 +113,32 @@ namespace Acnutech.Analyzers {
                 return ResourceManager.GetString("ConvertRefToOutParameterDiagnostic_Title", resourceCulture);
             }
         }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Detects when both branches of a conditional call the same method with identical signatures but different argument values.
+        /// </summary>
+        internal static string DuplicateMethodCallDiagnostic_Description {
+            get {
+                return ResourceManager.GetString("DuplicateMethodCallDiagnostic_Description", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Method &apos;{0}&apos; is called in both branches with different arguments..
+        /// </summary>
+        internal static string DuplicateMethodCallDiagnostic_MessageFormat {
+            get {
+                return ResourceManager.GetString("DuplicateMethodCallDiagnostic_MessageFormat", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Same method called in both branches with different arguments.
+        /// </summary>
+        internal static string DuplicateMethodCallDiagnostic_Title {
+            get {
+                return ResourceManager.GetString("DuplicateMethodCallDiagnostic_Title", resourceCulture);
+            }
+        }
     }
 }

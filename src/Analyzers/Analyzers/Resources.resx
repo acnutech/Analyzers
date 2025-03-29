@@ -141,4 +141,16 @@
     <value>Parameter '{0}' is passed by 'ref' but its original value is never read. Consider using 'out' instead for clearer intent.</value>
     <comment>The format-able message the diagnostic displays.</comment>
   </data>
+  <data name="DuplicateMethodCallDiagnostic_Title" xml:space="preserve">
+    <value>Same method called in both branches with different arguments</value>
+    <comment>The title of the diagnostic.</comment>
+  </data>
+  <data name="DuplicateMethodCallDiagnostic_MessageFormat" xml:space="preserve">
+    <value>Method '{0}' is called in both branches with different arguments.</value>
+    <comment>The format-able message the diagnostic displays.</comment>
+  </data>
+  <data name="DuplicateMethodCallDiagnostic_Description" xml:space="preserve">
+    <value>Detects when both branches of a conditional call the same method with identical signatures but different argument values</value>
+    <comment>An optional longer localizable description of the diagnostic.</comment>
+  </data>
 </root>
