@@ -119,8 +119,8 @@ namespace Acnutech.Analyzers
                 }
             }
 
-            var updatedDocument1 = documentEditor.GetChangedDocument();
-            var formattedDocument = await Formatter.FormatAsync(updatedDocument1, Formatter.Annotation, cancellationToken: cancellationToken);
+            var updatedDocument = documentEditor.GetChangedDocument();
+            var formattedDocument = await Formatter.FormatAsync(updatedDocument, Formatter.Annotation, cancellationToken: cancellationToken);
             return formattedDocument.Project.Solution;
         }
 

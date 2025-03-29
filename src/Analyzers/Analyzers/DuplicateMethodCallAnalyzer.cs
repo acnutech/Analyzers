@@ -10,7 +10,7 @@ namespace Acnutech.Analyzers
     [DiagnosticAnalyzer(LanguageNames.CSharp)]
     public class DuplicateMethodCallAnalyzer : DiagnosticAnalyzer
     {
-        internal const string Id = "ACNU0003";
+        internal const string DiagnosticId = "ACNU0003";
 
         private static readonly LocalizableString Title = GetLocalizableString(nameof(Resources.DuplicateMethodCallDiagnostic_Title));
         private static readonly LocalizableString MessageFormat = GetLocalizableString(nameof(Resources.DuplicateMethodCallDiagnostic_MessageFormat));
@@ -19,7 +19,7 @@ namespace Acnutech.Analyzers
         private const string Category = "Usage";
 
         internal static readonly DiagnosticDescriptor Rule
-            = new DiagnosticDescriptor(Id, Title, MessageFormat, Category, DiagnosticSeverity.Info, isEnabledByDefault: true, description: Description);
+            = new DiagnosticDescriptor(DiagnosticId, Title, MessageFormat, Category, DiagnosticSeverity.Info, isEnabledByDefault: true, description: Description);
 
         public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics
             => ImmutableArray.Create(Rule);
@@ -51,15 +51,19 @@ namespace Acnutech.Analyzers
                 return;
             }
 
+            if (invocationInStatement.ArgumentList.Arguments.Count == 0)
+            {
+                return;
+            }
+
             if (invocationInStatement.ArgumentList.Arguments.Count != invocationInElse.ArgumentList.Arguments.Count)
             {
                 return;
             }
 
-            var statementMethodSymbol = context.SemanticModel.GetSymbolInfo(invocationInStatement).Symbol as IMethodSymbol;
-            var elseMethodSymbol = context.SemanticModel.GetSymbolInfo(invocationInElse).Symbol as IMethodSymbol;
 
-            if (statementMethodSymbol == null || elseMethodSymbol == null)
+            if (!(context.SemanticModel.GetSymbolInfo(invocationInStatement).Symbol is IMethodSymbol statementMethodSymbol)
+                || !(context.SemanticModel.GetSymbolInfo(invocationInElse).Symbol is IMethodSymbol elseMethodSymbol))
             {
                 return;
             }
@@ -69,17 +73,44 @@ namespace Acnutech.Analyzers
                 return;
             }
 
-            var matchingArguments = invocationInStatement.ArgumentList.Arguments.Zip(
-                invocationInElse.ArgumentList.Arguments,
-                (a, b) => a.Expression.IsEquivalentTo(b.Expression, false));
-            if (matchingArguments.Where(a => !a).Count() > 1)
+            var matchingArguments = invocationInStatement.ArgumentList.Arguments
+                .Zip(invocationInElse.ArgumentList.Arguments, AreArgumentsEquivalent)
+                .ToList();
+            if (matchingArguments.Contains(ArgumentComparisonResult.NotComparable))
             {
-                // more then one different argument
+                return;
+            }
+
+            if (matchingArguments.Where(a => a == ArgumentComparisonResult.Different).Count() != 1)
+            {
+                // Not exactly one argument is different
                 return;
             }
 
             var diagnostic = Diagnostic.Create(Rule, ifStatementSyntax.IfKeyword.GetLocation(), statementMethodSymbol.Name);
             context.ReportDiagnostic(diagnostic);
+        }
+
+        internal static ArgumentComparisonResult AreArgumentsEquivalent(ArgumentSyntax a, ArgumentSyntax b)
+        {
+            if (a.IsEquivalentTo(b, false))
+            {
+                return ArgumentComparisonResult.Equivalent;
+            }
+
+            if (a.NameColon?.Name.Identifier.Text != b.NameColon?.Name.Identifier.Text)
+            {
+                return ArgumentComparisonResult.NotComparable;
+            }
+
+            return ArgumentComparisonResult.Different;
+        }
+
+        internal enum ArgumentComparisonResult
+        {
+            Equivalent,
+            Different,
+            NotComparable
         }
 
         private InvocationExpressionSyntax GetInvocationExpression(CSharpSyntaxNode node)
