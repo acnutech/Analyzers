@@ -70,6 +70,15 @@ namespace Acnutech.Analyzers {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Replace with a single method call using a conditional expression for unmatched argument..
+        /// </summary>
+        internal static string DuplicateMethodCallCodeFixTitle {
+            get {
+                return ResourceManager.GetString("DuplicateMethodCallCodeFixTitle", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Remove the ref modifier.
         /// </summary>
         internal static string RemoveRefModifierCodeFixTitle {
