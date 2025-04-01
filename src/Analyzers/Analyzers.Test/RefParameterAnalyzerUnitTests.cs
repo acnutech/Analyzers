@@ -25,23 +25,19 @@ public class RefParameterAnalyzerUnitTest
     [TestMethod]
     public async Task RefParameter_IsFixable()
     {
-        var test = /* lang=c#-test */@"
-    namespace ConsoleApplication1
-    {
-        class Test
-        {
-            void MethodA({|#0:ref|} int a) { System.Console.WriteLine(a); }
-        }
-    }";
+        var test = /* lang=c#-test */"""
+            class Test
+            {
+                void MethodA({|#0:ref|} int a) { System.Console.WriteLine(a); }
+            }
+            """;
 
-        var codeFixTest = /* lang=c#-test */@"
-    namespace ConsoleApplication1
-    {
-        class Test
-        {
-            void MethodA(int a) { System.Console.WriteLine(a); }
-        }
-    }";
+        var codeFixTest = /* lang=c#-test */"""
+            class Test
+            {
+                void MethodA(int a) { System.Console.WriteLine(a); }
+            }
+            """;
 
         var expected = VerifyRemoveUnnecessaryRefModifier.Diagnostic(RefParameterAnalyzer.RemoveUnnecessaryRefModifierDiagnostic.Rule).WithLocation(0).WithArguments("a");
         await VerifyRemoveUnnecessaryRefModifier.VerifyCodeFixAsync(test, expected, codeFixTest);
@@ -50,35 +46,31 @@ public class RefParameterAnalyzerUnitTest
     [TestMethod]
     public async Task FixUsagesOfMethodWithRefParameters()
     {
-        var test = /* lang=c#-test */@"
-    namespace ConsoleApplication1
-    {
-        class Test
-        {
-            void MethodA({|#0:ref|} int a) {}
-
-            void MethodB()
+        var test = /* lang=c#-test */"""
+            class Test
             {
-                int b = 0;
-                MethodA(ref b);
+                void MethodA({|#0:ref|} int a) {}
+
+                void MethodB()
+                {
+                    int b = 0;
+                    MethodA(ref b);
+                }
             }
-        }
-    }";
+            """;
 
-        var codeFixTest = /* lang=c#-test */@"
-    namespace ConsoleApplication1
-    {
-        class Test
-        {
-            void MethodA(int a) {}
-
-            void MethodB()
+        var codeFixTest = /* lang=c#-test */"""
+            class Test
             {
-                int b = 0;
-                MethodA(b);
+                void MethodA(int a) {}
+
+                void MethodB()
+                {
+                    int b = 0;
+                    MethodA(b);
+                }
             }
-        }
-    }";
+            """;
 
         var expected = VerifyRemoveUnnecessaryRefModifier.Diagnostic(RefParameterAnalyzer.RemoveUnnecessaryRefModifierDiagnostic.Rule).WithLocation(0).WithArguments("a");
         await VerifyRemoveUnnecessaryRefModifier.VerifyCodeFixAsync(test, expected, codeFixTest);
@@ -87,41 +79,37 @@ public class RefParameterAnalyzerUnitTest
     [TestMethod]
     public async Task PreserveIndentation()
     {
-        var test = /* lang=c#-test */@"
-    namespace ConsoleApplication1
-    {
-        class Test
-        {
-            void MethodA(int a, 
-                         {|#0:ref|} int b,
-                         int c) { c = b; }
-
-            void MethodB()
+        var test = /* lang=c#-test */"""
+            class Test
             {
-                int b = 0;
-                MethodA(1,
-                    ref b, 3);
+                void MethodA(int a, 
+                                {|#0:ref|} int b,
+                                int c) { c = b; }
+
+                void MethodB()
+                {
+                    int b = 0;
+                    MethodA(1,
+                        ref b, 3);
+                }
             }
-        }
-    }";
+            """;
 
-        var codeFixTest = /* lang=c#-test */@"
-    namespace ConsoleApplication1
-    {
-        class Test
-        {
-            void MethodA(int a,
-                         int b,
-                         int c) { c = b; }
-
-            void MethodB()
+        var codeFixTest = /* lang=c#-test */"""
+            class Test
             {
-                int b = 0;
-                MethodA(1,
-                    b, 3);
+                void MethodA(int a,
+                                int b,
+                                int c) { c = b; }
+
+                void MethodB()
+                {
+                    int b = 0;
+                    MethodA(1,
+                        b, 3);
+                }
             }
-        }
-    }";
+            """;
 
         var expected = VerifyRemoveUnnecessaryRefModifier.Diagnostic(RefParameterAnalyzer.RemoveUnnecessaryRefModifierDiagnostic.Rule).WithLocation(0).WithArguments("b");
         await VerifyRemoveUnnecessaryRefModifier.VerifyCodeFixAsync(test, expected, codeFixTest);
@@ -130,41 +118,37 @@ public class RefParameterAnalyzerUnitTest
     [TestMethod]
     public async Task PreserveTrivia()
     {
-        var test = /* lang=c#-test */@"
-    namespace ConsoleApplication1
-    {
-        class Test
-        {
-            void MethodA(int a, 
-                         {|#0:ref|} /*a*/int b,
-                         int c) { c = b; }
-
-            void MethodB()
+        var test = /* lang=c#-test */"""
+            class Test
             {
-                int b = 0;
-                MethodA(1,
-                    /*d*/ref/*c*/ b, 3);
+                void MethodA(int a, 
+                                {|#0:ref|} /*a*/int b,
+                                int c) { c = b; }
+
+                void MethodB()
+                {
+                    int b = 0;
+                    MethodA(1,
+                        /*d*/ref/*c*/ b, 3);
+                }
             }
-        }
-    }";
+            """;
 
-        var codeFixTest = /* lang=c#-test */@"
-    namespace ConsoleApplication1
-    {
-        class Test
-        {
-            void MethodA(int a,
-                          /*a*/int b,
-                         int c) { c = b; }
-
-            void MethodB()
+        var codeFixTest = /* lang=c#-test */"""
+            class Test
             {
-                int b = 0;
-                MethodA(1,
-                    /*d*//*c*/ b, 3);
+                void MethodA(int a,
+                                 /*a*/int b,
+                                int c) { c = b; }
+
+                void MethodB()
+                {
+                    int b = 0;
+                    MethodA(1,
+                        /*d*//*c*/ b, 3);
+                }
             }
-        }
-    }";
+            """;
 
         var expected = VerifyRemoveUnnecessaryRefModifier.Diagnostic(RefParameterAnalyzer.RemoveUnnecessaryRefModifierDiagnostic.Rule).WithLocation(0).WithArguments("b");
         await VerifyRemoveUnnecessaryRefModifier.VerifyCodeFixAsync(test, expected, codeFixTest);
@@ -173,35 +157,31 @@ public class RefParameterAnalyzerUnitTest
     [TestMethod]
     public async Task FormatModifiedFragments()
     {
-        var test = /* lang=c#-test */@"
-    namespace ConsoleApplication1
-    {
-        class Test
-        {
-            void MethodA(int a,  {|#0:ref|}  int b, int c) {}
-
-            void MethodB()
+        var test = /* lang=c#-test */"""
+            class Test
             {
-                int b = 0;
-                MethodA(1,  ref  b, 3);
+                void MethodA(int a,  {|#0:ref|}  int b, int c) {}
+
+                void MethodB()
+                {
+                    int b = 0;
+                    MethodA(1,  ref  b, 3);
+                }
             }
-        }
-    }";
+            """;
 
-        var codeFixTest = /* lang=c#-test */@"
-    namespace ConsoleApplication1
-    {
-        class Test
-        {
-            void MethodA(int a, int b, int c) {}
-
-            void MethodB()
+        var codeFixTest = /* lang=c#-test */"""
+            class Test
             {
-                int b = 0;
-                MethodA(1, b, 3);
+                void MethodA(int a, int b, int c) {}
+
+                void MethodB()
+                {
+                    int b = 0;
+                    MethodA(1, b, 3);
+                }
             }
-        }
-    }";
+            """;
 
         var expected = VerifyRemoveUnnecessaryRefModifier.Diagnostic(RefParameterAnalyzer.RemoveUnnecessaryRefModifierDiagnostic.Rule).WithLocation(0).WithArguments("b");
         await VerifyRemoveUnnecessaryRefModifier.VerifyCodeFixAsync(test, expected, codeFixTest);
@@ -210,45 +190,41 @@ public class RefParameterAnalyzerUnitTest
     [TestMethod]
     public async Task UpdateMultipleReferencesToChangedMethod()
     {
-        var test = /* lang=c#-test */@"
-    namespace ConsoleApplication1
-    {
-        class Test
-        {
-            void MethodA({|#0:ref|} int a) {}
-
-            void MethodB()
+        var test = /* lang=c#-test */"""
+            class Test
             {
-                int b = 0;
-                MethodA(ref b);
-                MethodA(ref b);
-                MethodA(ref b);
-                MethodA(ref b);
-                MethodA(ref b);
-                MethodA(ref b);
+                void MethodA({|#0:ref|} int a) {}
+
+                void MethodB()
+                {
+                    int b = 0;
+                    MethodA(ref b);
+                    MethodA(ref b);
+                    MethodA(ref b);
+                    MethodA(ref b);
+                    MethodA(ref b);
+                    MethodA(ref b);
+                }
             }
-        }
-    }";
+            """;
 
-        var codeFixTest = /* lang=c#-test */@"
-    namespace ConsoleApplication1
-    {
-        class Test
-        {
-            void MethodA(int a) {}
-
-            void MethodB()
+        var codeFixTest = /* lang=c#-test */"""
+            class Test
             {
-                int b = 0;
-                MethodA(b);
-                MethodA(b);
-                MethodA(b);
-                MethodA(b);
-                MethodA(b);
-                MethodA(b);
+                void MethodA(int a) {}
+
+                void MethodB()
+                {
+                    int b = 0;
+                    MethodA(b);
+                    MethodA(b);
+                    MethodA(b);
+                    MethodA(b);
+                    MethodA(b);
+                    MethodA(b);
+                }
             }
-        }
-    }";
+            """;
 
         var expected = VerifyRemoveUnnecessaryRefModifier.Diagnostic(RefParameterAnalyzer.RemoveUnnecessaryRefModifierDiagnostic.Rule).WithLocation(0).WithArguments("a");
         await VerifyRemoveUnnecessaryRefModifier.VerifyCodeFixAsync(test, expected, codeFixTest);
@@ -257,19 +233,17 @@ public class RefParameterAnalyzerUnitTest
     [TestMethod]
     public async Task OverridingMethod_IsOmitted()
     {
-        var test = /* lang=c#-test */@"
-    namespace ConsoleApplication1
-    {
-        abstract class Base {
-            public abstract void MethodA(ref int a);
-        }
-
-        class Test : Base
-        {
-            public override void MethodA(ref int a) {
+        var test = /* lang=c#-test */"""
+            abstract class Base {
+                public abstract void MethodA(ref int a);
             }
-        }
-    }";
+
+            class Test : Base
+            {
+                public override void MethodA(ref int a) {
+                }
+            }
+            """;
 
         await VerifyRemoveUnnecessaryRefModifier.VerifyAnalyzerAsync(test);
     }
@@ -277,19 +251,17 @@ public class RefParameterAnalyzerUnitTest
     [TestMethod]
     public async Task MethodExplicitlyImplementsInterface_IsOmitted()
     {
-        var test = /* lang=c#-test */@"
-    namespace ConsoleApplication1
-    {
-        interface IBase {
-            public void MethodA(ref int a);
-        }
-
-        class Test : IBase
-        {
-            public void MethodA(ref int a) {
+        var test = /* lang=c#-test */"""
+            interface IBase {
+                public void MethodA(ref int a);
             }
-        }
-    }";
+
+            class Test : IBase
+            {
+                public void MethodA(ref int a) {
+                }
+            }
+            """;
 
         await VerifyRemoveUnnecessaryRefModifier.VerifyAnalyzerAsync(test);
     }
@@ -297,19 +269,17 @@ public class RefParameterAnalyzerUnitTest
     [TestMethod]
     public async Task MethodImplementsInterface_IsOmitted()
     {
-        var test = /* lang=c#-test */@"
-    namespace ConsoleApplication1
-    {
-        interface IBase {
-            public void MethodA(ref int a);
-        }
-
-        class Test : IBase
-        {
-            void IBase.MethodA(ref int a) {
+        var test = /* lang=c#-test */"""
+            interface IBase {
+                public void MethodA(ref int a);
             }
-        }
-    }";
+
+            class Test : IBase
+            {
+                void IBase.MethodA(ref int a) {
+                }
+            }
+            """;
 
         await VerifyRemoveUnnecessaryRefModifier.VerifyAnalyzerAsync(test);
     }
@@ -317,16 +287,14 @@ public class RefParameterAnalyzerUnitTest
     [TestMethod]
     public async Task AssignedRefModifier_IsOmitted()
     {
-        var test = /* lang=c#-test */@"
-    namespace ConsoleApplication1
-    {
-        class Test
-        {
-            void MethodA(ref int a) {
-                a = a;
+        var test = /* lang=c#-test */"""
+            class Test
+            {
+                void MethodA(ref int a) {
+                    a = a;
+                }
             }
-        }
-    }";
+            """;
 
         await VerifyRemoveUnnecessaryRefModifier.VerifyAnalyzerAsync(test);
     }
@@ -334,15 +302,13 @@ public class RefParameterAnalyzerUnitTest
     [TestMethod]
     public async Task VirtualMethod_IsOmitted()
     {
-        var test = /* lang=c#-test */@"
-    namespace ConsoleApplication1
-    {
-        class Test
-        {
-            public virtual void MethodA(ref int a) {
+        var test = /* lang=c#-test */"""
+            class Test
+            {
+                public virtual void MethodA(ref int a) {
+                }
             }
-        }
-    }";
+            """;
 
         await VerifyRemoveUnnecessaryRefModifier.VerifyAnalyzerAsync(test);
     }
@@ -350,13 +316,14 @@ public class RefParameterAnalyzerUnitTest
     [TestMethod]
     public async Task RefIsUsedAsRefForAnotherCall_IsOmitted()
     {
-        var test = /* lang=c#-test */@"
-        class Test
-        {
-            void MethodA(ref bool a) {
-                System.Threading.Monitor.TryEnter(new object(), ref a);
+        var test = /* lang=c#-test */"""
+            class Test
+            {
+                void MethodA(ref bool a) {
+                    System.Threading.Monitor.TryEnter(new object(), ref a);
+                }
             }
-}";
+            """;
 
         await VerifyRemoveUnnecessaryRefModifier.VerifyAnalyzerAsync(test);
     }
