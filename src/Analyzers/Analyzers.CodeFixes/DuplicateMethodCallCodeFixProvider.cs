@@ -33,44 +33,70 @@ namespace Acnutech.Analyzers
             var diagnostic = context.Diagnostics.First();
             var diagnosticSpan = diagnostic.Location.SourceSpan;
 
-            // Find the type declaration identified by the diagnostic.
-            var declaration = root.FindToken(diagnosticSpan.Start).Parent.AncestorsAndSelf().OfType<IfStatementSyntax>().First();
-
             // Register a code action that will invoke the fix.
             context.RegisterCodeFix(
                 CodeAction.Create(
                     title: CodeFixResources.DuplicateMethodCallCodeFixTitle,
                     createChangedSolution:
-                        async c => await ConvertToMethodWithConditionalArgument(context, declaration, c)
+                        async c => await ConvertToMethodWithConditionalArgument(context, root.FindToken(diagnosticSpan.Start), c)
                             ?? context.Document.Project.Solution,
                     equivalenceKey: nameof(CodeFixResources.DuplicateMethodCallCodeFixTitle)),
                 diagnostic);
         }
 
-        private async Task<Solution> ConvertToMethodWithConditionalArgument(CodeFixContext context, IfStatementSyntax ifStatementSyntax, CancellationToken cancellationToken)
+        private async Task<Solution> ConvertToMethodWithConditionalArgument(CodeFixContext context,
+            SyntaxToken syntaxToken, CancellationToken cancellationToken)
         {
-            var invocationInStatement = GetInvocationExpression(ifStatementSyntax.Statement);
-            var invocationInElse = GetInvocationExpression(ifStatementSyntax.Else?.Statement);
+            var ifStatementSyntax = syntaxToken.Parent.AncestorsAndSelf()
+                .OfType<IfStatementSyntax>()
+                .FirstOrDefault();
+            if (ifStatementSyntax != null)
+            {
+                var invocationInThenBranch = GetInvocationExpression(ifStatementSyntax.Statement);
+                var invocationInElseBranch = GetInvocationExpression(ifStatementSyntax.Else?.Statement);
+                return await ConvertToMethodWithConditionalArgument(context, invocationInThenBranch,
+                    invocationInElseBranch, ifStatementSyntax.Condition, ifStatementSyntax.OpenParenToken.TrailingTrivia,
+                    ifStatementSyntax, cancellationToken).ConfigureAwait(false);
+            }
 
-            if (invocationInStatement == null || invocationInElse == null)
+            var conditionalExpressionSyntax = syntaxToken.Parent.AncestorsAndSelf()
+                .OfType<ConditionalExpressionSyntax>()
+                .FirstOrDefault();
+            if (conditionalExpressionSyntax != null)
+            {
+                var invocationInWhenTrue = conditionalExpressionSyntax.WhenTrue as InvocationExpressionSyntax;
+                var invocationInWhenFalse = conditionalExpressionSyntax.WhenFalse as InvocationExpressionSyntax;
+                return await ConvertToMethodWithConditionalArgument(
+                    context, invocationInWhenTrue, invocationInWhenFalse, conditionalExpressionSyntax.Condition,
+                    SyntaxTriviaList.Empty, conditionalExpressionSyntax, cancellationToken).ConfigureAwait(false);
+            }
+
+            return null;
+        }
+
+        private async Task<Solution> ConvertToMethodWithConditionalArgument(CodeFixContext context,
+            InvocationExpressionSyntax thanBranchInvocation, InvocationExpressionSyntax elseBranchInvocation,
+            ExpressionSyntax condition, SyntaxTriviaList conditionProceedingTrivia, SyntaxNode replacedSyntaxNode, CancellationToken cancellationToken)
+        {
+            if (thanBranchInvocation == null || elseBranchInvocation == null)
             {
                 return null;
             }
 
-            if (invocationInStatement.ArgumentList.Arguments.Count == 0)
+            if (thanBranchInvocation.ArgumentList.Arguments.Count == 0)
             {
                 return null;
             }
 
-            if (invocationInStatement.ArgumentList.Arguments.Count != invocationInElse.ArgumentList.Arguments.Count)
+            if (thanBranchInvocation.ArgumentList.Arguments.Count != elseBranchInvocation.ArgumentList.Arguments.Count)
             {
                 return null;
             }
 
             var semanticModel = await context.Document.GetSemanticModelAsync(cancellationToken);
 
-            if (!(semanticModel.GetSymbolInfo(invocationInStatement).Symbol is IMethodSymbol statementMethodSymbol)
-                || !(semanticModel.GetSymbolInfo(invocationInElse).Symbol is IMethodSymbol elseMethodSymbol))
+            if (!(semanticModel.GetSymbolInfo(thanBranchInvocation).Symbol is IMethodSymbol statementMethodSymbol)
+                || !(semanticModel.GetSymbolInfo(elseBranchInvocation).Symbol is IMethodSymbol elseMethodSymbol))
             {
                 return null;
             }
@@ -81,15 +107,15 @@ namespace Acnutech.Analyzers
             }
 
             var conditionWithTrivia = new WithTrivia<ExpressionSyntax>(
-                ifStatementSyntax.Condition,
-                ifStatementSyntax.OpenParenToken.TrailingTrivia);
-            var matchingArguments = Arguments(invocationInStatement.ArgumentList)
-                .Zip(Arguments(invocationInElse.ArgumentList),
+                condition,
+                conditionProceedingTrivia);
+            var matchingArguments = Arguments(thanBranchInvocation.ArgumentList)
+                .Zip(Arguments(elseBranchInvocation.ArgumentList),
                 (a, b) => JoinArguments(a, b, conditionWithTrivia));
 
             var ifReplacement =
                 SyntaxFactory.InvocationExpression(
-                    invocationInStatement.Expression.WithoutTrivia(),
+                    thanBranchInvocation.Expression.WithoutTrivia(),
                     SyntaxFactory.ArgumentList(
                         SyntaxFactory.Token(SyntaxKind.OpenParenToken).WithTrailingTrivia(matchingArguments.First().Trivia),
                         SyntaxFactory.SeparatedList(
@@ -99,11 +125,16 @@ namespace Acnutech.Analyzers
 
             var oldRoot = await context.Document.GetSyntaxRootAsync(cancellationToken).ConfigureAwait(false);
 
+            var replacementNode =
+                replacedSyntaxNode is StatementSyntax
+                ? (SyntaxNode)SyntaxFactory.ExpressionStatement(ifReplacement)
+                : ifReplacement;
+
             var newRoot =
                 oldRoot
                 .ReplaceNode(
-                    ifStatementSyntax,
-                    SyntaxFactory.ExpressionStatement(ifReplacement)
+                    replacedSyntaxNode,
+                    replacementNode
                         .WithAdditionalAnnotations(Formatter.Annotation)
                 );
 
@@ -131,7 +162,8 @@ namespace Acnutech.Analyzers
             return node?.ChildNodes().SingleOrDefault() as InvocationExpressionSyntax;
         }
 
-        private WithTrivia<ArgumentSyntax> JoinArguments(WithTrivia<ArgumentSyntax> argument1, WithTrivia<ArgumentSyntax> argument2, WithTrivia<ExpressionSyntax> conditionExpression)
+        private WithTrivia<ArgumentSyntax> JoinArguments(WithTrivia<ArgumentSyntax> argument1,
+            WithTrivia<ArgumentSyntax> argument2, WithTrivia<ExpressionSyntax> conditionExpression)
         {
             switch (DuplicateMethodCallAnalyzer.AreArgumentsEquivalent(argument1.Syntax, argument2.Syntax))
             {

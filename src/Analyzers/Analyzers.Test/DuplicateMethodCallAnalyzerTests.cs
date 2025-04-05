@@ -257,6 +257,43 @@ public class DuplicateMethodCallAnalyzerTests
             .WithArguments("MethodB");
         await VerifyuplicateMethodCall.VerifyCodeFixAsync(source, expected, fixedSource);
     }
+    
+    [TestMethod]
+    public async Task DuplicateCallsInConditional_Bare()
+    {
+        var source = /* lang=c#-test */"""
+            class Test
+            {
+                void MethodA() {
+                    var a = true;
+                    var r = a {|#0:?|} MethodB(1) : MethodB(2);
+                }
+
+                int MethodB(int a) {
+                    return a;
+                }
+            }
+            """;
+
+        var fixedSource = /* lang=c#-test */"""
+            class Test
+            {
+                void MethodA() {
+                    var a = true;
+                    var r = MethodB(a ? 1 : 2);
+                }
+
+                int MethodB(int a) {
+                    return a;
+                }
+            }
+            """;
+
+        var expected = VerifyuplicateMethodCall.Diagnostic(DuplicateMethodCallAnalyzer.Rule)
+            .WithLocation(0)
+            .WithArguments("MethodB");
+        await VerifyuplicateMethodCall.VerifyCodeFixAsync(source, expected, fixedSource);
+    }
 
     [TestMethod]
     public async Task NoArguments()
