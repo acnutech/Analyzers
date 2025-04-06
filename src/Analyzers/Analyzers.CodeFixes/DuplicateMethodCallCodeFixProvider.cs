@@ -68,7 +68,7 @@ namespace Acnutech.Analyzers
                 var invocationInWhenFalse = conditionalExpressionSyntax.WhenFalse as InvocationExpressionSyntax;
                 return await ConvertToMethodWithConditionalArgument(
                     context, invocationInWhenTrue, invocationInWhenFalse, conditionalExpressionSyntax.Condition,
-                    SyntaxTriviaList.Empty, conditionalExpressionSyntax, cancellationToken).ConfigureAwait(false);
+                    conditionalExpressionSyntax.GetLeadingTrivia(), conditionalExpressionSyntax, cancellationToken).ConfigureAwait(false);
             }
 
             return null;
@@ -106,12 +106,16 @@ namespace Acnutech.Analyzers
                 return null;
             }
 
+            (var leadingWhitespace, var leadingNonWhitespace)
+                = SplitLeadingTrivia(conditionProceedingTrivia);
+
             var conditionWithTrivia = new WithTrivia<ExpressionSyntax>(
                 condition,
-                conditionProceedingTrivia);
-            var matchingArguments = Arguments(thanBranchInvocation.ArgumentList)
-                .Zip(Arguments(elseBranchInvocation.ArgumentList),
-                (a, b) => JoinArguments(a, b, conditionWithTrivia));
+                leadingNonWhitespace);
+            var matchingArguments =
+                Arguments(thanBranchInvocation.ArgumentList)
+                    .Zip(Arguments(elseBranchInvocation.ArgumentList),
+                    (a, b) => JoinArguments(a, b, conditionWithTrivia));
 
             var ifReplacement =
                 SyntaxFactory.InvocationExpression(
@@ -121,7 +125,9 @@ namespace Acnutech.Analyzers
                         SyntaxFactory.SeparatedList(
                             matchingArguments.Select(a => a.Syntax),
                             GetSeparators(matchingArguments)),
-                        SyntaxFactory.Token(SyntaxKind.CloseParenToken)));
+                        SyntaxFactory.Token(SyntaxKind.CloseParenToken)))
+                    .WithLeadingTrivia(leadingWhitespace)
+                    .WithTrailingTrivia(replacedSyntaxNode.GetTrailingTrivia());
 
             var oldRoot = await context.Document.GetSyntaxRootAsync(cancellationToken).ConfigureAwait(false);
 
@@ -144,13 +150,45 @@ namespace Acnutech.Analyzers
             return formattedDocument.Project.Solution;
         }
 
-        private IEnumerable<SyntaxToken> GetSeparators(IEnumerable<WithTrivia<ArgumentSyntax>> arguments)
+        private (SyntaxTriviaList LeadingWhitespace, SyntaxTriviaList LeadingNonWhitespace) SplitLeadingTrivia(SyntaxTriviaList trivia)
         {
-            foreach (var argument in arguments.Skip(1))
+            var leadingWhitespace = new List<SyntaxTrivia>();
+            var leadingNonWhitespace = new List<SyntaxTrivia>();
+            bool isLeadingWhitespace = true;
+            foreach (var t in trivia)
             {
-                yield return SyntaxFactory.Token(SyntaxKind.CommaToken).WithTrailingTrivia(argument.Trivia);
+                if (isLeadingWhitespace
+                    && t.IsKind(SyntaxKind.WhitespaceTrivia))
+                {
+                    leadingWhitespace.Add(t);
+                }
+                else if (t.IsKind(SyntaxKind.EndOfLineTrivia))
+                {
+                    isLeadingWhitespace = true;
+                    leadingWhitespace.AddRange(leadingNonWhitespace);
+                    leadingWhitespace.Add(t);
+                    leadingNonWhitespace.Clear();
+                }
+                else
+                {
+                    isLeadingWhitespace = false;
+                    leadingNonWhitespace.Add(t);
+                }
             }
+
+            return (SyntaxFactory.TriviaList(leadingWhitespace),
+                SyntaxFactory.TriviaList(leadingNonWhitespace));
         }
+
+        private IEnumerable<SyntaxToken> GetSeparators(IEnumerable<WithTrivia<ArgumentSyntax>> arguments)
+            => from argument in arguments.Skip(1)
+               select SyntaxFactory.Token(SyntaxKind.CommaToken).WithTrailingTrivia(argument.Trivia);
+
+        private SyntaxTriviaList WithoutLastEndOfLine(SyntaxTriviaList syntaxTrivias)
+            => syntaxTrivias.Count > 0
+                && syntaxTrivias.Last().IsKind(SyntaxKind.EndOfLineTrivia)
+                ? syntaxTrivias.RemoveAt(syntaxTrivias.Count - 1)
+                : syntaxTrivias;
 
         private InvocationExpressionSyntax GetInvocationExpression(CSharpSyntaxNode node)
         {
@@ -171,14 +209,15 @@ namespace Acnutech.Analyzers
                     return argument1;
 
                 case DuplicateMethodCallAnalyzer.ArgumentComparisonResult.Different:
-
                     return new WithTrivia<ArgumentSyntax>(
                         SyntaxFactory.Argument(
                             argument1.Syntax.NameColon,
-                            argument1.Syntax.RefKindKeyword,
+                            SyntaxFactory.Token(SyntaxKind.None),
                             SyntaxFactory.ConditionalExpression(
-                                conditionExpression.Syntax,
-                                SyntaxFactory.Token(SyntaxKind.QuestionToken).WithTrailingTrivia(argument1.Trivia),
+                                conditionExpression.Syntax
+                                    .WithoutLeadingTrivia(),
+                                SyntaxFactory.Token(SyntaxKind.QuestionToken)
+                                    .WithTrailingTrivia(argument1.Trivia),
                                 argument1.Syntax.Expression,
                                 SyntaxFactory.Token(SyntaxKind.ColonToken).WithTrailingTrivia(argument2.Trivia),
                                 argument2.Syntax.Expression)),
@@ -192,7 +231,9 @@ namespace Acnutech.Analyzers
             }
         }
 
-
+        bool NeedsLeadingTrivia(SyntaxTriviaList previousTrailingTrivia)
+            => previousTrailingTrivia.Count > 0
+                && previousTrailingTrivia.Last().IsKind(SyntaxKind.EndOfLineTrivia);
 
         private IEnumerable<WithTrivia<ArgumentSyntax>> Arguments(ArgumentListSyntax argumentList)
         {
