@@ -125,7 +125,8 @@ public class DuplicateMethodCallAnalyzerTests
             {
                 void MethodA() {
                     var a = true;
-                    MethodB(/*c1*/a/*c2*/?/*1a*/  1 /*1b*/:/*c*/2/*c2*/,/*b1*/ 2 /*b2*/);
+                    MethodB(/*c1*/a/*c2*/?/*1a*/  1 /*1b*/:/*c*/2/*c2*/,/*b1*/ 2 /*b2*/)/*i2*/
+                    ;
                 }
 
                 void MethodB(int a, int b) {
@@ -255,6 +256,137 @@ public class DuplicateMethodCallAnalyzerTests
         var expected = VerifyuplicateMethodCall.Diagnostic(DuplicateMethodCallAnalyzer.Rule)
             .WithLocation(0)
             .WithArguments("MethodB");
+        await VerifyuplicateMethodCall.VerifyCodeFixAsync(source, expected, fixedSource);
+    }
+    
+    [TestMethod]
+    public async Task DuplicateCallsInConditional_Bare()
+    {
+        var source = /* lang=c#-test */"""
+            class Test
+            {
+                void MethodA() {
+                    var a = true;
+                    var r = a {|#0:?|} MethodB(1) : MethodB(2);
+                }
+
+                int MethodB(int a) {
+                    return a;
+                }
+            }
+            """;
+
+        var fixedSource = /* lang=c#-test */"""
+            class Test
+            {
+                void MethodA() {
+                    var a = true;
+                    var r = MethodB(a ? 1 : 2);
+                }
+
+                int MethodB(int a) {
+                    return a;
+                }
+            }
+            """;
+
+        var expected = VerifyuplicateMethodCall.Diagnostic(DuplicateMethodCallAnalyzer.Rule)
+            .WithLocation(0)
+            .WithArguments("MethodB");
+        await VerifyuplicateMethodCall.VerifyCodeFixAsync(source, expected, fixedSource);
+    }
+
+    [TestMethod]
+    public async Task DuplicateCallsInConditional_KeepsFormatting()
+    {
+        var source = /* lang=c#-test */"""
+            class Test
+            {
+                void MethodA() {
+                    var a = true;
+                    var e = /*dd*/
+                            //dd
+                            /* rr */
+                            /* rr12
+                             rr$ */ 
+                            /*aa1*/  a/*a2*/ {|#0:?|}   MethodC/*m2*/(/*1a*/
+                                /*ddd*/1 /*1b*/,/*b1*/ 2 /*b2*/)
+                        :   MethodC(/*C*/2/*C2*/,
+                            2)
+                    /*i2*/; /* end */
+                }
+
+                int MethodC(int a, int b) {
+                    return a;
+                }
+            }
+            """;
+
+        var fixedSource = /* lang=c#-test */"""
+            class Test
+            {
+                void MethodA() {
+                    var a = true;
+                    var e = /*dd*/
+                            //dd
+                            /* rr */
+                            /* rr12
+                             rr$ */
+                            MethodC(/*aa1*/  a/*a2*/ ?/*1a*/
+                                /*ddd*/1 /*1b*/:/*C*/2/*C2*/,/*b1*/ 2 /*b2*/)
+                    /*i2*/; /* end */
+                }
+            
+                int MethodC(int a, int b) {
+                    return a;
+                }
+            }
+            """;
+
+        var expected = VerifyuplicateMethodCall.Diagnostic(DuplicateMethodCallAnalyzer.Rule)
+            .WithLocation(0)
+            .WithArguments("MethodC");
+        await VerifyuplicateMethodCall.VerifyCodeFixAsync(source, expected, fixedSource);
+    }
+    
+    [TestMethod]
+    public async Task DuplicateCallsInConditional_KeepsFormatting2()
+    {
+        var source = /* lang=c#-test */"""
+            class Test
+            {
+                void MethodA() {
+                    var a = true;
+                    var e = 
+                        a
+                        {|#0:?|}  MethodC( 1, 2)
+                        : MethodC(2, 2);
+                }
+
+                int MethodC(int a, int b) {
+                    return a;
+                }
+            }
+            """;
+
+        var fixedSource = /* lang=c#-test */"""
+            class Test
+            {
+                void MethodA() {
+                    var a = true;
+                    var e =
+                        MethodC(a ? 1 : 2, 2);
+                }
+            
+                int MethodC(int a, int b) {
+                    return a;
+                }
+            }
+            """;
+
+        var expected = VerifyuplicateMethodCall.Diagnostic(DuplicateMethodCallAnalyzer.Rule)
+            .WithLocation(0)
+            .WithArguments("MethodC");
         await VerifyuplicateMethodCall.VerifyCodeFixAsync(source, expected, fixedSource);
     }
 

@@ -32,6 +32,18 @@ namespace Acnutech.Analyzers
             // TODO: Consider registering other actions that act on syntax instead of or in addition to symbols
             // See https://github.com/dotnet/roslyn/blob/main/docs/analyzers/Analyzer%20Actions%20Semantics.md for more information
             context.RegisterSyntaxNodeAction(AnalyzeIf, SyntaxKind.IfStatement);
+            context.RegisterSyntaxNodeAction(AnalyzeConditionalExpression, SyntaxKind.ConditionalExpression);
+        }
+
+        private void AnalyzeConditionalExpression(SyntaxNodeAnalysisContext context)
+        {
+            var conditionalExpressionSyntax = (ConditionalExpressionSyntax)context.Node;
+
+            var invocationInWhenTrue = conditionalExpressionSyntax.WhenTrue as InvocationExpressionSyntax;
+            var invocationInWhenFalse = conditionalExpressionSyntax.WhenFalse as InvocationExpressionSyntax;
+
+            RegisterDiagnosticIfDuplicatedCall(context, invocationInWhenTrue, invocationInWhenFalse,
+                conditionalExpressionSyntax.QuestionToken.GetLocation());
         }
 
         private void AnalyzeIf(SyntaxNodeAnalysisContext context)
@@ -43,38 +55,45 @@ namespace Acnutech.Analyzers
                 return;
             }
 
-            var invocationInStatement = GetInvocationExpression(ifStatementSyntax.Statement);
-            var invocationInElse = GetInvocationExpression(ifStatementSyntax.Else.Statement);
+            var invocationInThenBranch = GetInvocationExpression(ifStatementSyntax.Statement);
+            var invocationInElseBranch = GetInvocationExpression(ifStatementSyntax.Else.Statement);
 
-            if (invocationInStatement == null || invocationInElse == null)
+            RegisterDiagnosticIfDuplicatedCall(context, invocationInThenBranch, invocationInElseBranch, ifStatementSyntax.IfKeyword.GetLocation());
+        }
+
+        private static void RegisterDiagnosticIfDuplicatedCall(
+            SyntaxNodeAnalysisContext context, InvocationExpressionSyntax invocationInThenBranch,
+            InvocationExpressionSyntax invocationInElseBranch, Location diagnosticLocation)
+        {
+            if (invocationInThenBranch == null || invocationInElseBranch == null)
             {
                 return;
             }
 
-            if (invocationInStatement.ArgumentList.Arguments.Count == 0)
+            if (invocationInThenBranch.ArgumentList.Arguments.Count == 0)
             {
                 return;
             }
 
-            if (invocationInStatement.ArgumentList.Arguments.Count != invocationInElse.ArgumentList.Arguments.Count)
+            if (invocationInThenBranch.ArgumentList.Arguments.Count != invocationInElseBranch.ArgumentList.Arguments.Count)
             {
                 return;
             }
 
 
-            if (!(context.SemanticModel.GetSymbolInfo(invocationInStatement).Symbol is IMethodSymbol statementMethodSymbol)
-                || !(context.SemanticModel.GetSymbolInfo(invocationInElse).Symbol is IMethodSymbol elseMethodSymbol))
+            if (!(context.SemanticModel.GetSymbolInfo(invocationInThenBranch).Symbol is IMethodSymbol thenBranchMethodSymbol)
+                || !(context.SemanticModel.GetSymbolInfo(invocationInElseBranch).Symbol is IMethodSymbol elseBranchMethodSymbol))
             {
                 return;
             }
 
-            if (!SymbolEqualityComparer.Default.Equals(statementMethodSymbol, elseMethodSymbol))
+            if (!SymbolEqualityComparer.Default.Equals(thenBranchMethodSymbol, elseBranchMethodSymbol))
             {
                 return;
             }
 
-            var matchingArguments = invocationInStatement.ArgumentList.Arguments
-                .Zip(invocationInElse.ArgumentList.Arguments, AreArgumentsEquivalent)
+            var matchingArguments = invocationInThenBranch.ArgumentList.Arguments
+                .Zip(invocationInElseBranch.ArgumentList.Arguments, AreArgumentsEquivalent)
                 .ToList();
             if (matchingArguments.Contains(ArgumentComparisonResult.NotComparable))
             {
@@ -87,7 +106,7 @@ namespace Acnutech.Analyzers
                 return;
             }
 
-            var diagnostic = Diagnostic.Create(Rule, ifStatementSyntax.IfKeyword.GetLocation(), statementMethodSymbol.Name);
+            var diagnostic = Diagnostic.Create(Rule, diagnosticLocation, thenBranchMethodSymbol.Name);
             context.ReportDiagnostic(diagnostic);
         }
 
