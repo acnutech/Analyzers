@@ -136,10 +136,10 @@ namespace Acnutech.Analyzers
         {
             if (node is BlockSyntax blockSyntax)
             {
-                node = blockSyntax.Statements.SingleOrDefault();
+                node = blockSyntax.Statements.SingleOrDefaultIfMultiple();
             }
 
-            return node?.ChildNodes().SingleOrDefault() as InvocationExpressionSyntax;
+            return node?.ChildNodes().SingleOrDefaultIfMultiple() as InvocationExpressionSyntax;
         }
 
         private static LocalizableResourceString GetLocalizableString(string name)

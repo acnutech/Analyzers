@@ -389,6 +389,111 @@ public class DuplicateMethodCallAnalyzerTests
             .WithArguments("MethodC");
         await VerifyuplicateMethodCall.VerifyCodeFixAsync(source, expected, fixedSource);
     }
+    
+    [TestMethod]
+    public async Task WithConditionalInsideIfStatement_AppliesCodeFixToConditional()
+    {
+        var source = /* lang=c#-test */"""
+            class Test
+            {
+                void MethodA() {
+                    var a = true;
+                    if (a)
+                    {
+                        MethodC(0);
+                    }
+                    else
+                    {
+                        var nn = a {|#0:?|} MethodC(0) : MethodC(3);
+                    }
+                }
+
+                int MethodC(int a) {
+                    return a;
+                }
+            }
+            """;
+        
+        var fixedSource = /* lang=c#-test */"""
+            class Test
+            {
+                void MethodA() {
+                    var a = true;
+                    if (a)
+                    {
+                        MethodC(0);
+                    }
+                    else
+                    {
+                        var nn = MethodC(a ? 0 : 3);
+                    }
+                }
+            
+                int MethodC(int a) {
+                    return a;
+                }
+            }
+            """;
+
+        var expected = VerifyuplicateMethodCall.Diagnostic(DuplicateMethodCallAnalyzer.Rule)
+            .WithLocation(0)
+            .WithArguments("MethodC");
+        await VerifyuplicateMethodCall.VerifyCodeFixAsync(source, expected, fixedSource);
+    }
+
+    
+    [TestMethod]
+    public async Task IfStatementWithNotSingleStatement_IsIgnored()
+    {
+        var source = /* lang=c#-test */"""
+            class Test
+            {
+                void MethodA() {
+                    var a = true;
+                    if (a)
+                    {
+                        MethodC(0);
+                        MethodC(0);
+                    }
+                    else
+                    {
+                        var nn = a {|#0:?|} MethodC(0) : MethodC(3);
+                    }
+                }
+
+                int MethodC(int a) {
+                    return a;
+                }
+            }
+            """;
+        
+        var fixedSource = /* lang=c#-test */"""
+            class Test
+            {
+                void MethodA() {
+                    var a = true;
+                    if (a)
+                    {
+                        MethodC(0);
+                        MethodC(0);
+                    }
+                    else
+                    {
+                        var nn = MethodC(a ? 0 : 3);
+                    }
+                }
+            
+                int MethodC(int a) {
+                    return a;
+                }
+            }
+            """;
+
+        var expected = VerifyuplicateMethodCall.Diagnostic(DuplicateMethodCallAnalyzer.Rule)
+            .WithLocation(0)
+            .WithArguments("MethodC");
+        await VerifyuplicateMethodCall.VerifyCodeFixAsync(source, expected, fixedSource);
+    }
 
     [TestMethod]
     public async Task NoArguments()

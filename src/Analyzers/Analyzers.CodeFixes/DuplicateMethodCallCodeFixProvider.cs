@@ -47,31 +47,29 @@ namespace Acnutech.Analyzers
         private async Task<Solution> ConvertToMethodWithConditionalArgument(CodeFixContext context,
             SyntaxToken syntaxToken, CancellationToken cancellationToken)
         {
-            var ifStatementSyntax = syntaxToken.Parent.AncestorsAndSelf()
-                .OfType<IfStatementSyntax>()
-                .FirstOrDefault();
-            if (ifStatementSyntax != null)
+            switch (syntaxToken.Parent)
             {
-                var invocationInThenBranch = GetInvocationExpression(ifStatementSyntax.Statement);
-                var invocationInElseBranch = GetInvocationExpression(ifStatementSyntax.Else?.Statement);
-                return await ConvertToMethodWithConditionalArgument(context, invocationInThenBranch,
-                    invocationInElseBranch, ifStatementSyntax.Condition, ifStatementSyntax.OpenParenToken.TrailingTrivia,
-                    ifStatementSyntax, cancellationToken).ConfigureAwait(false);
-            }
+                case IfStatementSyntax ifStatementSyntax:
+                    {
+                        var invocationInThenBranch = GetInvocationExpression(ifStatementSyntax.Statement);
+                        var invocationInElseBranch = GetInvocationExpression(ifStatementSyntax.Else?.Statement);
+                        return await ConvertToMethodWithConditionalArgument(context, invocationInThenBranch,
+                            invocationInElseBranch, ifStatementSyntax.Condition, ifStatementSyntax.OpenParenToken.TrailingTrivia,
+                            ifStatementSyntax, cancellationToken).ConfigureAwait(false);
+                    }
 
-            var conditionalExpressionSyntax = syntaxToken.Parent.AncestorsAndSelf()
-                .OfType<ConditionalExpressionSyntax>()
-                .FirstOrDefault();
-            if (conditionalExpressionSyntax != null)
-            {
-                var invocationInWhenTrue = conditionalExpressionSyntax.WhenTrue as InvocationExpressionSyntax;
-                var invocationInWhenFalse = conditionalExpressionSyntax.WhenFalse as InvocationExpressionSyntax;
-                return await ConvertToMethodWithConditionalArgument(
-                    context, invocationInWhenTrue, invocationInWhenFalse, conditionalExpressionSyntax.Condition,
-                    conditionalExpressionSyntax.GetLeadingTrivia(), conditionalExpressionSyntax, cancellationToken).ConfigureAwait(false);
-            }
+                case ConditionalExpressionSyntax conditionalExpressionSyntax:
+                    {
+                        var invocationInWhenTrue = conditionalExpressionSyntax.WhenTrue as InvocationExpressionSyntax;
+                        var invocationInWhenFalse = conditionalExpressionSyntax.WhenFalse as InvocationExpressionSyntax;
+                        return await ConvertToMethodWithConditionalArgument(
+                            context, invocationInWhenTrue, invocationInWhenFalse, conditionalExpressionSyntax.Condition,
+                            conditionalExpressionSyntax.GetLeadingTrivia(), conditionalExpressionSyntax, cancellationToken).ConfigureAwait(false);
+                    }
 
-            return null;
+                default:
+                    return null;
+            }
         }
 
         private async Task<Solution> ConvertToMethodWithConditionalArgument(CodeFixContext context,
@@ -184,20 +182,14 @@ namespace Acnutech.Analyzers
             => from argument in arguments.Skip(1)
                select SyntaxFactory.Token(SyntaxKind.CommaToken).WithTrailingTrivia(argument.Trivia);
 
-        private SyntaxTriviaList WithoutLastEndOfLine(SyntaxTriviaList syntaxTrivias)
-            => syntaxTrivias.Count > 0
-                && syntaxTrivias.Last().IsKind(SyntaxKind.EndOfLineTrivia)
-                ? syntaxTrivias.RemoveAt(syntaxTrivias.Count - 1)
-                : syntaxTrivias;
-
         private InvocationExpressionSyntax GetInvocationExpression(CSharpSyntaxNode node)
         {
             if (node is BlockSyntax blockSyntax)
             {
-                node = blockSyntax.Statements.SingleOrDefault();
+                node = blockSyntax.Statements.SingleOrDefaultIfMultiple();
             }
 
-            return node?.ChildNodes().SingleOrDefault() as InvocationExpressionSyntax;
+            return node?.ChildNodes().SingleOrDefaultIfMultiple() as InvocationExpressionSyntax;
         }
 
         private WithTrivia<ArgumentSyntax> JoinArguments(WithTrivia<ArgumentSyntax> argument1,
