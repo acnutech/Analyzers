@@ -125,8 +125,7 @@ public class DuplicateMethodCallAnalyzerTests
             {
                 void MethodA() {
                     var a = true;
-                    MethodB(/*c1*/a/*c2*/?/*1a*/  1 /*1b*/:/*c*/2/*c2*/,/*b1*/ 2 /*b2*/)/*i2*/
-                    ;
+                    MethodB(/*c1*/a/*c2*/?/*1a*/  1 /*1b*/:/*c*/2/*c2*/,/*b1*/ 2 /*b2*/);/*i2*/
                 }
 
                 void MethodB(int a, int b) {
@@ -259,6 +258,49 @@ public class DuplicateMethodCallAnalyzerTests
         await VerifyuplicateMethodCall.VerifyCodeFixAsync(source, expected, fixedSource);
     }
     
+    [TestMethod]
+    public async Task IfStatementWithProceedingComment_PreservesIt()
+    {
+        var source = /* lang=c#-test */"""
+            class Test
+            {
+                void MethodA() {
+                    var a = true;
+                    // aa
+                    {|#0:if|} (a) {
+                        // bb
+                        MethodB(1);
+                    } else {
+                        // cc
+                        MethodB(2);
+                    }
+                }
+
+                void MethodB(int a) {
+                }
+            }
+            """;
+
+        var fixedSource = /* lang=c#-test */"""
+            class Test
+            {
+                void MethodA() {
+                    var a = true;
+                    // aa
+                    MethodB(a ? 1 : 2);
+                }
+
+                void MethodB(int a) {
+                }
+            }
+            """;
+
+        var expected = VerifyuplicateMethodCall.Diagnostic(DuplicateMethodCallAnalyzer.Rule)
+            .WithLocation(0)
+            .WithArguments("MethodB");
+        await VerifyuplicateMethodCall.VerifyCodeFixAsync(source, expected, fixedSource);
+    }
+
     [TestMethod]
     public async Task DuplicateCallsInConditional_Bare()
     {
@@ -440,7 +482,6 @@ public class DuplicateMethodCallAnalyzerTests
             .WithArguments("MethodC");
         await VerifyuplicateMethodCall.VerifyCodeFixAsync(source, expected, fixedSource);
     }
-
     
     [TestMethod]
     public async Task IfStatementWithNotSingleStatement_IsIgnored()
