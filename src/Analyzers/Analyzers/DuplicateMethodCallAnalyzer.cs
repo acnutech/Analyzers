@@ -35,7 +35,7 @@ namespace Acnutech.Analyzers
             context.RegisterSyntaxNodeAction(AnalyzeConditionalExpression, SyntaxKind.ConditionalExpression);
         }
 
-        private void AnalyzeConditionalExpression(SyntaxNodeAnalysisContext context)
+        private static void AnalyzeConditionalExpression(SyntaxNodeAnalysisContext context)
         {
             var conditionalExpressionSyntax = (ConditionalExpressionSyntax)context.Node;
 
@@ -46,7 +46,7 @@ namespace Acnutech.Analyzers
                 conditionalExpressionSyntax.QuestionToken.GetLocation());
         }
 
-        private void AnalyzeIf(SyntaxNodeAnalysisContext context)
+        private static void AnalyzeIf(SyntaxNodeAnalysisContext context)
         {
             var ifStatementSyntax = (IfStatementSyntax)context.Node;
 
@@ -132,14 +132,14 @@ namespace Acnutech.Analyzers
             NotComparable
         }
 
-        private InvocationExpressionSyntax GetInvocationExpression(CSharpSyntaxNode node)
+        private static InvocationExpressionSyntax GetInvocationExpression(CSharpSyntaxNode node)
         {
             if (node is BlockSyntax blockSyntax)
             {
-                node = blockSyntax.Statements.SingleOrDefault();
+                node = blockSyntax.Statements.SingleOrDefaultIfMultiple();
             }
 
-            return node?.ChildNodes().SingleOrDefault() as InvocationExpressionSyntax;
+            return node?.ChildNodes().SingleOrDefaultIfMultiple() as InvocationExpressionSyntax;
         }
 
         private static LocalizableResourceString GetLocalizableString(string name)
