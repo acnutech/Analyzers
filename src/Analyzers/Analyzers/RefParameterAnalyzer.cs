@@ -87,7 +87,7 @@ namespace Acnutech.Analyzers
                 }
 
                 IMethodSymbol methodSymbol = context.SemanticModel.GetDeclaredSymbol(method, context.CancellationToken);
-                if (methodSymbol.ExplicitInterfaceImplementations.Any() || ImplementsInterfaceImplicitly(methodSymbol))
+                if (methodSymbol.ExplicitInterfaceImplementations.Any() || methodSymbol.ImplementsInterfaceImplicitly())
                 {
                     return;
                 }
@@ -116,28 +116,6 @@ namespace Acnutech.Analyzers
                 Debug.WriteLine(ex.Message);
                 throw;
             }
-        }
-
-        private bool ImplementsInterfaceImplicitly(IMethodSymbol methodSymbol)
-        {
-            if (methodSymbol.DeclaredAccessibility == Accessibility.Private
-                || methodSymbol.DeclaredAccessibility == Accessibility.NotApplicable)
-            {
-                return false;
-            }
-
-            var containingType = methodSymbol.ContainingType;
-            foreach (var interfaceType in containingType.AllInterfaces)
-            {
-                foreach (var interfaceMember in interfaceType.GetMembers())
-                {
-                    if (SymbolEqualityComparer.Default.Equals(methodSymbol, containingType.FindImplementationForInterfaceMember(interfaceMember)))
-                    {
-                        return true;
-                    }
-                }
-            }
-            return false;
         }
 
         private static LocalizableResourceString GetLocalizableString(string name)
