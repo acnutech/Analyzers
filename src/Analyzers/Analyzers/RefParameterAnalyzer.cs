@@ -22,7 +22,8 @@ namespace Acnutech.Analyzers
             private static readonly LocalizableString Description = GetLocalizableString(nameof(Resources.AnalyzerDescription));
             private const string Category = "Usage";
 
-            internal static readonly DiagnosticDescriptor Rule = new DiagnosticDescriptor(Id, Title, MessageFormat, Category, DiagnosticSeverity.Warning, isEnabledByDefault: true, description: Description);
+            internal static readonly DiagnosticDescriptor Rule = new DiagnosticDescriptor(Id, Title, MessageFormat, Category, DiagnosticSeverity.Warning, isEnabledByDefault: true, description: Description,
+                helpLinkUri: "https://github.com/acnutech/Analyzers/wiki/ACNU0001");
         }
 
         internal static class ConvertRefToOutParameterDiagnostic
@@ -36,7 +37,8 @@ namespace Acnutech.Analyzers
             private const string Category = "Usage";
 
             internal static readonly DiagnosticDescriptor Rule
-                = new DiagnosticDescriptor(Id, Title, MessageFormat, Category, DiagnosticSeverity.Info, isEnabledByDefault: true, description: Description);
+                = new DiagnosticDescriptor(Id, Title, MessageFormat, Category, DiagnosticSeverity.Info, isEnabledByDefault: true, description: Description,
+                    helpLinkUri: "https://github.com/acnutech/Analyzers/wiki/ACNU0002");
         }
 
         public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics
