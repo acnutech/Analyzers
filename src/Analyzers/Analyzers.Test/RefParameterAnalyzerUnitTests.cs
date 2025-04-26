@@ -17,7 +17,7 @@ public class RefParameterAnalyzerUnitTest
     [TestMethod]
     public async Task EmptyFile_IsIgnored()
     {
-        var test = @"";
+        var test = "";
 
         await VerifyRemoveUnnecessaryRefModifier.VerifyAnalyzerAsync(test);
     }
@@ -387,7 +387,6 @@ public class RefParameterAnalyzerUnitTest
                 // Adding to DisabledDiagnostics does not work
                 DiagnosticResult.CompilerError("CS8328").WithSpan(3, 22, 3, 28).WithArguments("params", "ref"),
             }
-
         }.RunAsync();
     }
 
@@ -421,7 +420,6 @@ public class RefParameterAnalyzerUnitTest
         var expected = VerifyConvertRefToOutParameter.Diagnostic(RefParameterAnalyzer.ConvertRefToOutParameterDiagnostic.Rule).WithLocation(0).WithArguments("a");
         await VerifyConvertRefToOutParameter.VerifyCodeFixAsync(test, expected, codeFixResult);
     }
-
 
     [TestMethod]
     public async Task RefParameterToOut_OmitsReadFirstParameters()
@@ -479,7 +477,7 @@ public class RefParameterAnalyzerUnitTest
         var expected = VerifyConvertRefToOutParameter.Diagnostic(RefParameterAnalyzer.ConvertRefToOutParameterDiagnostic.Rule).WithLocation(0).WithArguments("a");
         await VerifyConvertRefToOutParameter.VerifyCodeFixAsync(test, expected, fixedSource);
     }
-    
+
     [TestMethod]
     public async Task RefParameterToOut_PreservesTrivia()
     {

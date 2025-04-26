@@ -11,7 +11,7 @@ public class OutParameterToReturnAnalyzerTests
     [TestMethod]
     public async Task EmptyFile_IsIgnored()
     {
-        var test = @"";
+        var test = "";
 
         await VerifyOutParameterToReturn.VerifyAnalyzerAsync(test);
     }
@@ -65,7 +65,6 @@ public class OutParameterToReturnAnalyzerTests
 
         await VerifyOutParameterToReturn.VerifyAnalyzerAsync(test);
     }
-
 
     [TestMethod]
     public async Task MethodWithMultipleOutParameters_IsIgnored()
@@ -133,7 +132,7 @@ public class OutParameterToReturnAnalyzerTests
 
         await VerifyOutParameterToReturn.VerifyAnalyzerAsync(test);
     }
-    
+
     [TestMethod]
     public async Task MethodImplementingInterface_IsIgnored()
     {
@@ -154,7 +153,7 @@ public class OutParameterToReturnAnalyzerTests
 
         await VerifyOutParameterToReturn.VerifyAnalyzerAsync(test);
     }
-    
+
     [TestMethod]
     public async Task MethodImplementingInterfaceExplicitly_IsIgnored()
     {
