@@ -19,7 +19,9 @@ namespace Acnutech.Analyzers
         private const string Category = "Usage";
 
         internal static readonly DiagnosticDescriptor Rule
-            = new DiagnosticDescriptor(DiagnosticId, Title, MessageFormat, Category, DiagnosticSeverity.Info, isEnabledByDefault: true, description: Description);
+            = new DiagnosticDescriptor(
+                DiagnosticId, Title, MessageFormat, Category, DiagnosticSeverity.Info, isEnabledByDefault: true,
+                description: Description, helpLinkUri: "https://github.com/acnutech/Analyzers/wiki/ACNU0003");
 
         public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics
             => ImmutableArray.Create(Rule);

@@ -1,6 +1,6 @@
 ﻿using System.Threading.Tasks;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using VerifyuplicateMethodCall = Microsoft.CodeAnalysis.CSharp.Testing.CSharpCodeFixVerifier<
+using VerifyDuplicateMethodCall = Microsoft.CodeAnalysis.CSharp.Testing.CSharpCodeFixVerifier<
     Acnutech.Analyzers.DuplicateMethodCallAnalyzer,
     Acnutech.Analyzers.DuplicateMethodCallCodeFixProvider,
     Microsoft.CodeAnalysis.Testing.DefaultVerifier>;
@@ -15,7 +15,7 @@ public class DuplicateMethodCallAnalyzerTests
     {
         var source = @"";
 
-        await VerifyuplicateMethodCall.VerifyAnalyzerAsync(source);
+        await VerifyDuplicateMethodCall.VerifyAnalyzerAsync(source);
     }
 
     [TestMethod]
@@ -51,10 +51,10 @@ public class DuplicateMethodCallAnalyzerTests
             }
             """;
 
-        var expected = VerifyuplicateMethodCall.Diagnostic(DuplicateMethodCallAnalyzer.Rule)
+        var expected = VerifyDuplicateMethodCall.Diagnostic(DuplicateMethodCallAnalyzer.Rule)
             .WithLocation(0)
             .WithArguments("MethodB");
-        await VerifyuplicateMethodCall.VerifyCodeFixAsync(source, expected, fixedSource);
+        await VerifyDuplicateMethodCall.VerifyCodeFixAsync(source, expected, fixedSource);
     }
 
     [TestMethod]
@@ -90,10 +90,10 @@ public class DuplicateMethodCallAnalyzerTests
             }
             """;
 
-        var expected = VerifyuplicateMethodCall.Diagnostic(DuplicateMethodCallAnalyzer.Rule)
+        var expected = VerifyDuplicateMethodCall.Diagnostic(DuplicateMethodCallAnalyzer.Rule)
             .WithLocation(0)
             .WithArguments("MethodB");
-        await VerifyuplicateMethodCall.VerifyCodeFixAsync(source, expected, fixedSource);
+        await VerifyDuplicateMethodCall.VerifyCodeFixAsync(source, expected, fixedSource);
     }
 
     [TestMethod]
@@ -133,10 +133,10 @@ public class DuplicateMethodCallAnalyzerTests
             }
             """;
 
-        var expected = VerifyuplicateMethodCall.Diagnostic(DuplicateMethodCallAnalyzer.Rule)
+        var expected = VerifyDuplicateMethodCall.Diagnostic(DuplicateMethodCallAnalyzer.Rule)
             .WithLocation(0)
             .WithArguments("MethodB");
-        await VerifyuplicateMethodCall.VerifyCodeFixAsync(source, expected, fixedSource);
+        await VerifyDuplicateMethodCall.VerifyCodeFixAsync(source, expected, fixedSource);
     }
 
     [TestMethod]
@@ -172,10 +172,10 @@ public class DuplicateMethodCallAnalyzerTests
             }
             """;
 
-        var expected = VerifyuplicateMethodCall.Diagnostic(DuplicateMethodCallAnalyzer.Rule)
+        var expected = VerifyDuplicateMethodCall.Diagnostic(DuplicateMethodCallAnalyzer.Rule)
             .WithLocation(0)
             .WithArguments("MethodB");
-        await VerifyuplicateMethodCall.VerifyCodeFixAsync(source, expected, fixedSource);
+        await VerifyDuplicateMethodCall.VerifyCodeFixAsync(source, expected, fixedSource);
     }
 
     [TestMethod]
@@ -211,10 +211,10 @@ public class DuplicateMethodCallAnalyzerTests
             }
             """;
 
-        var expected = VerifyuplicateMethodCall.Diagnostic(DuplicateMethodCallAnalyzer.Rule)
+        var expected = VerifyDuplicateMethodCall.Diagnostic(DuplicateMethodCallAnalyzer.Rule)
             .WithLocation(0)
             .WithArguments("MethodB");
-        await VerifyuplicateMethodCall.VerifyCodeFixAsync(source, expected, fixedSource);
+        await VerifyDuplicateMethodCall.VerifyCodeFixAsync(source, expected, fixedSource);
     }
 
     [TestMethod]
@@ -252,10 +252,10 @@ public class DuplicateMethodCallAnalyzerTests
             }
             """;
 
-        var expected = VerifyuplicateMethodCall.Diagnostic(DuplicateMethodCallAnalyzer.Rule)
+        var expected = VerifyDuplicateMethodCall.Diagnostic(DuplicateMethodCallAnalyzer.Rule)
             .WithLocation(0)
             .WithArguments("MethodB");
-        await VerifyuplicateMethodCall.VerifyCodeFixAsync(source, expected, fixedSource);
+        await VerifyDuplicateMethodCall.VerifyCodeFixAsync(source, expected, fixedSource);
     }
     
     [TestMethod]
@@ -295,10 +295,10 @@ public class DuplicateMethodCallAnalyzerTests
             }
             """;
 
-        var expected = VerifyuplicateMethodCall.Diagnostic(DuplicateMethodCallAnalyzer.Rule)
+        var expected = VerifyDuplicateMethodCall.Diagnostic(DuplicateMethodCallAnalyzer.Rule)
             .WithLocation(0)
             .WithArguments("MethodB");
-        await VerifyuplicateMethodCall.VerifyCodeFixAsync(source, expected, fixedSource);
+        await VerifyDuplicateMethodCall.VerifyCodeFixAsync(source, expected, fixedSource);
     }
 
     [TestMethod]
@@ -332,10 +332,10 @@ public class DuplicateMethodCallAnalyzerTests
             }
             """;
 
-        var expected = VerifyuplicateMethodCall.Diagnostic(DuplicateMethodCallAnalyzer.Rule)
+        var expected = VerifyDuplicateMethodCall.Diagnostic(DuplicateMethodCallAnalyzer.Rule)
             .WithLocation(0)
             .WithArguments("MethodB");
-        await VerifyuplicateMethodCall.VerifyCodeFixAsync(source, expected, fixedSource);
+        await VerifyDuplicateMethodCall.VerifyCodeFixAsync(source, expected, fixedSource);
     }
 
     [TestMethod]
@@ -385,10 +385,10 @@ public class DuplicateMethodCallAnalyzerTests
             }
             """;
 
-        var expected = VerifyuplicateMethodCall.Diagnostic(DuplicateMethodCallAnalyzer.Rule)
+        var expected = VerifyDuplicateMethodCall.Diagnostic(DuplicateMethodCallAnalyzer.Rule)
             .WithLocation(0)
             .WithArguments("MethodC");
-        await VerifyuplicateMethodCall.VerifyCodeFixAsync(source, expected, fixedSource);
+        await VerifyDuplicateMethodCall.VerifyCodeFixAsync(source, expected, fixedSource);
     }
     
     [TestMethod]
@@ -426,10 +426,10 @@ public class DuplicateMethodCallAnalyzerTests
             }
             """;
 
-        var expected = VerifyuplicateMethodCall.Diagnostic(DuplicateMethodCallAnalyzer.Rule)
+        var expected = VerifyDuplicateMethodCall.Diagnostic(DuplicateMethodCallAnalyzer.Rule)
             .WithLocation(0)
             .WithArguments("MethodC");
-        await VerifyuplicateMethodCall.VerifyCodeFixAsync(source, expected, fixedSource);
+        await VerifyDuplicateMethodCall.VerifyCodeFixAsync(source, expected, fixedSource);
     }
     
     [TestMethod]
@@ -477,10 +477,10 @@ public class DuplicateMethodCallAnalyzerTests
             }
             """;
 
-        var expected = VerifyuplicateMethodCall.Diagnostic(DuplicateMethodCallAnalyzer.Rule)
+        var expected = VerifyDuplicateMethodCall.Diagnostic(DuplicateMethodCallAnalyzer.Rule)
             .WithLocation(0)
             .WithArguments("MethodC");
-        await VerifyuplicateMethodCall.VerifyCodeFixAsync(source, expected, fixedSource);
+        await VerifyDuplicateMethodCall.VerifyCodeFixAsync(source, expected, fixedSource);
     }
     
     [TestMethod]
@@ -530,10 +530,10 @@ public class DuplicateMethodCallAnalyzerTests
             }
             """;
 
-        var expected = VerifyuplicateMethodCall.Diagnostic(DuplicateMethodCallAnalyzer.Rule)
+        var expected = VerifyDuplicateMethodCall.Diagnostic(DuplicateMethodCallAnalyzer.Rule)
             .WithLocation(0)
             .WithArguments("MethodC");
-        await VerifyuplicateMethodCall.VerifyCodeFixAsync(source, expected, fixedSource);
+        await VerifyDuplicateMethodCall.VerifyCodeFixAsync(source, expected, fixedSource);
     }
 
     [TestMethod]
@@ -556,7 +556,7 @@ public class DuplicateMethodCallAnalyzerTests
             }
             """;
 
-        await VerifyuplicateMethodCall.VerifyAnalyzerAsync(source);
+        await VerifyDuplicateMethodCall.VerifyAnalyzerAsync(source);
     }
 
     [TestMethod]
@@ -579,7 +579,7 @@ public class DuplicateMethodCallAnalyzerTests
             }
             """;
 
-        await VerifyuplicateMethodCall.VerifyAnalyzerAsync(source);
+        await VerifyDuplicateMethodCall.VerifyAnalyzerAsync(source);
     }
 
     [TestMethod]
@@ -602,7 +602,7 @@ public class DuplicateMethodCallAnalyzerTests
             }
             """;
 
-        await VerifyuplicateMethodCall.VerifyAnalyzerAsync(source);
+        await VerifyDuplicateMethodCall.VerifyAnalyzerAsync(source);
     }
 
     [TestMethod]
@@ -628,7 +628,7 @@ public class DuplicateMethodCallAnalyzerTests
             }
             """;
 
-        await VerifyuplicateMethodCall.VerifyAnalyzerAsync(source);
+        await VerifyDuplicateMethodCall.VerifyAnalyzerAsync(source);
     }
 
     [TestMethod]
@@ -651,7 +651,7 @@ public class DuplicateMethodCallAnalyzerTests
             }
             """;
 
-        await VerifyuplicateMethodCall.VerifyAnalyzerAsync(source);
+        await VerifyDuplicateMethodCall.VerifyAnalyzerAsync(source);
     }
 
     [TestMethod]
@@ -674,7 +674,7 @@ public class DuplicateMethodCallAnalyzerTests
             }
             """;
 
-        await VerifyuplicateMethodCall.VerifyAnalyzerAsync(source);
+        await VerifyDuplicateMethodCall.VerifyAnalyzerAsync(source);
     }
 
     [TestMethod]
@@ -697,6 +697,6 @@ public class DuplicateMethodCallAnalyzerTests
             }
             """;
 
-        await VerifyuplicateMethodCall.VerifyAnalyzerAsync(source);
+        await VerifyDuplicateMethodCall.VerifyAnalyzerAsync(source);
     }
 }
