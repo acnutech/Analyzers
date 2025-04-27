@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -17,7 +18,6 @@ namespace Acnutech.Analyzers
 {
     public abstract class RefParameterAnalyzerCodeFixProvider : CodeFixProvider
     {
-
         public sealed override FixAllProvider GetFixAllProvider()
         {
             // See https://github.com/dotnet/roslyn/blob/main/docs/analyzers/FixAllProvider.md for more information on Fix All Providers
@@ -67,20 +67,18 @@ namespace Acnutech.Analyzers
             var methodReferences = await SymbolFinder.FindReferencesAsync(methodSymbol, document.Project.Solution, cancellationToken);
             var allReferencesByDocument =
                 methodReferences
-                .SelectMany(r => r.Locations.Select(l => (DocumentId: l.Document.Id, l.Location.SourceSpan)))
-                .Append((DocumentId: document.Id, SourceSpan: parameterSyntax.Span))
-                .GroupBy(l => l.DocumentId, l => l.SourceSpan);
+                .SelectMany(r =>
+                    r.Locations.Select(l => (DocumentId: l.Document.Id, Edit: (Edit)new ReferencedMethodEdit(l.Location.SourceSpan))))
+                .Append((DocumentId: document.Id, Edit: new ParameterEdit(parameterSyntax.Span)))
+                .GroupBy(l => l.DocumentId, l => l.Edit);
 
-            var refParameterInfo = new RefParameterInfo(
-                document.Id,
-                parameterSyntax.Span.Start,
-                methodDeclarationSyntax.ParameterList.Parameters.IndexOf(parameterSyntax));
+            var updateContext = CreateContext(parameterSyntax, methodDeclarationSyntax, methodSymbol);
 
             var solution = document.Project.Solution;
 
             foreach (var documentGroup in allReferencesByDocument)
             {
-                solution = await UpdateDocument(solution, documentGroup.Key, documentGroup.Select(dg => dg), refParameterInfo, cancellationToken);
+                solution = await UpdateDocument(solution, documentGroup.Key, documentGroup, updateContext, cancellationToken);
             }
 
             return solution;
@@ -89,8 +87,8 @@ namespace Acnutech.Analyzers
         private async Task<Solution> UpdateDocument(
             Solution solution,
             DocumentId documentId,
-            IEnumerable<TextSpan> spans,
-            RefParameterInfo refParameterInfo,
+            IEnumerable<Edit> places,
+            UpdateContext updateContext,
             CancellationToken cancellationToken)
         {
             var referenceDocument = solution.GetDocument(documentId);
@@ -102,21 +100,14 @@ namespace Acnutech.Analyzers
             var documentEditor = await DocumentEditor.CreateAsync(referenceDocument, cancellationToken);
             var documentSyntaxRoot = await referenceDocument.GetSyntaxRootAsync(cancellationToken);
 
-            var spansInEditOrder = spans
-                .OrderByDescending(sp => sp.Start);
+            var orderedEdits = TransformUpdatePlaces(updateContext, documentSyntaxRoot, places)
+                .OrderByDescending(sp => sp.Span.Start);
 
-            foreach (var span in spansInEditOrder)
+            foreach (var edit in orderedEdits)
             {
-                var node = documentSyntaxRoot.FindNode(span);
+                var node = documentSyntaxRoot.FindNode(edit.Span);
 
-                if (referenceDocument.Id == refParameterInfo.DocumentId && span.Start == refParameterInfo.ParameterSyntaxSpanStart)
-                {
-                    UpdateRefParameter(documentEditor, node);
-                }
-                else
-                {
-                    UpdateRefArgument(documentEditor, node, refParameterInfo.RefParameterIndex);
-                }
+                PerformEdit(updateContext, documentEditor, edit, node);
             }
 
             var updatedDocument = documentEditor.GetChangedDocument();
@@ -124,22 +115,90 @@ namespace Acnutech.Analyzers
             return formattedDocument.Project.Solution;
         }
 
+        private void PerformEdit(UpdateContext updateContext, DocumentEditor documentEditor, Edit edit, SyntaxNode node)
+        {
+            if (edit is ParameterEdit)
+            {
+                UpdateRefParameter(documentEditor, node);
+            }
+            else
+            {
+                UpdateRefArgument(documentEditor, node);
+            }
+        }
+
+        protected virtual UpdateContext CreateContext(ParameterSyntax parameterSyntax, MethodDeclarationSyntax methodDeclarationSyntax, IMethodSymbol methodSymbol)
+            => new UpdateContext(methodDeclarationSyntax.ParameterList.Parameters.IndexOf(parameterSyntax));
+
+        protected virtual IEnumerable<Edit> TransformUpdatePlaces(UpdateContext context, SyntaxNode documentRootNode, IEnumerable<Edit> edits)
+        {
+            foreach (var edit in edits)
+            {
+                switch (edit)
+                {
+                    case ParameterEdit parameterUpdatePlace:
+                        yield return parameterUpdatePlace;
+                        break;
+                    case ReferencedMethodEdit referenceMethodUpdatePlace:
+                        var node = documentRootNode.FindNode(referenceMethodUpdatePlace.Span);
+                        var invocationExpression = node.FirstAncestorOrSelf<InvocationExpressionSyntax>();
+                        if (invocationExpression != null)
+                        {
+                            var arguments = invocationExpression.ArgumentList.Arguments;
+                            if (arguments.Count > context.RefParameterIndex)
+                            {
+                                yield return new ArgumentEdit(arguments[context.RefParameterIndex].Span);
+                            }
+                        }
+                        break;
+                }
+            }
+        }
+
         protected abstract void UpdateRefParameter(DocumentEditor documentEditor, SyntaxNode node);
 
-        protected abstract void UpdateRefArgument(DocumentEditor documentEditor, SyntaxNode node, int refParameterIndex);
+        protected abstract void UpdateRefArgument(DocumentEditor documentEditor, SyntaxNode node);
 
-        private readonly struct RefParameterInfo
+        protected class UpdateContext
         {
-            public RefParameterInfo(DocumentId documentId, int parameterSyntaxSpanStart, int refParameterIndex)
+            public int RefParameterIndex { get; }
+
+            public UpdateContext(int refParameterIndex)
             {
-                DocumentId = documentId;
-                ParameterSyntaxSpanStart = parameterSyntaxSpanStart;
                 RefParameterIndex = refParameterIndex;
             }
+        }
 
-            public DocumentId DocumentId { get; }
-            public int ParameterSyntaxSpanStart { get; }
-            public int RefParameterIndex { get; }
+        [DebuggerDisplay("{GetType().Name} {Span}")]
+        protected abstract class Edit
+        {
+            public readonly TextSpan Span;
+
+            public Edit(TextSpan textSpan)
+            {
+                Span = textSpan;
+            }
+        }
+
+        protected class ParameterEdit : Edit
+        {
+            public ParameterEdit(TextSpan textSpan) : base(textSpan)
+            {
+            }
+        }
+
+        protected class ReferencedMethodEdit : Edit
+        {
+            public ReferencedMethodEdit(TextSpan textSpan) : base(textSpan)
+            {
+            }
+        }
+
+        protected class ArgumentEdit : Edit
+        {
+            public ArgumentEdit(TextSpan textSpan) : base(textSpan)
+            {
+            }
         }
     }
 }

@@ -35,17 +35,9 @@ namespace Acnutech.Analyzers
             documentEditor.ReplaceNode(node, newParameter);
         }
 
-        protected override void UpdateRefArgument(DocumentEditor documentEditor, SyntaxNode node, int refParameterIndex)
+        protected override void UpdateRefArgument(DocumentEditor documentEditor, SyntaxNode node)
         {
-            var invocationExpression = node.FirstAncestorOrSelf<InvocationExpressionSyntax>();
-
-            var arguments = invocationExpression.ArgumentList.Arguments;
-            if (arguments.Count <= refParameterIndex)
-            {
-                return;
-            }
-
-            var argument = arguments[refParameterIndex];
+            var argument = (ArgumentSyntax)node;
 
             if (!argument.RefKindKeyword.IsKind(SyntaxKind.RefKeyword)
                 || !(argument.Expression is IdentifierNameSyntax identifier))
@@ -61,12 +53,7 @@ namespace Acnutech.Analyzers
                     .WithLeadingTrivia(trivia)
                     .WithAdditionalAnnotations(Formatter.Annotation);
 
-            documentEditor.ReplaceNode(
-                invocationExpression,
-                invocationExpression.WithArgumentList(
-                    invocationExpression.ArgumentList.ReplaceNode(
-                        argument,
-                        argumentWithoutRef)));
+            documentEditor.ReplaceNode(argument, argumentWithoutRef);
         }
 
         private static SyntaxTriviaList GetTriviaAfterNodeRemoval(SyntaxToken removedNode, SyntaxTriviaList nextLeadingTrivia)
