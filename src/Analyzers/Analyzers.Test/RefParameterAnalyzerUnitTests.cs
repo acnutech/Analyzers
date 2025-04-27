@@ -231,6 +231,45 @@ public class RefParameterAnalyzerUnitTest
     }
 
     [TestMethod]
+    public async Task NestedRefArguments_AreCorrectlyFixed()
+    {
+        var test = /* lang=c#-test */"""
+            class Test
+            {
+                int M(int v, {|#0:ref|} int a)
+                {
+                    return a + v;
+                }
+
+                void Use()
+                {
+                    int b = 0;
+                    int c = M(M(1, ref b), ref b);
+                }
+            }
+            """;
+
+        var codeFixTest = /* lang=c#-test */"""
+            class Test
+            {
+                int M(int v, int a)
+                {
+                    return a + v;
+                }
+            
+                void Use()
+                {
+                    int b = 0;
+                    int c = M(M(1, b), b);
+                }
+            }
+            """;
+
+        var expected = VerifyRemoveUnnecessaryRefModifier.Diagnostic(RefParameterAnalyzer.RemoveUnnecessaryRefModifierDiagnostic.Rule).WithLocation(0).WithArguments("a");
+        await VerifyRemoveUnnecessaryRefModifier.VerifyCodeFixAsync(test, expected, codeFixTest);
+    }
+
+    [TestMethod]
     public async Task OverridingMethod_IsOmitted()
     {
         var test = /* lang=c#-test */"""

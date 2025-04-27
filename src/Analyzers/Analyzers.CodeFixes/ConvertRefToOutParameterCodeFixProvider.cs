@@ -35,17 +35,9 @@ namespace Acnutech.Analyzers
             documentEditor.ReplaceNode(node, newParameter);
         }
 
-        override protected void UpdateRefArgument(DocumentEditor documentEditor, SyntaxNode node, int refParameterIndex)
+        override protected void UpdateRefArgument(DocumentEditor documentEditor, SyntaxNode node)
         {
-            var invocationExpression = node.FirstAncestorOrSelf<InvocationExpressionSyntax>();
-
-            var arguments = invocationExpression.ArgumentList.Arguments;
-            if (arguments.Count <= refParameterIndex)
-            {
-                return;
-            }
-
-            var argument = arguments[refParameterIndex];
+            var argument = (ArgumentSyntax)node;
 
             if (!argument.RefKindKeyword.IsKind(SyntaxKind.RefKeyword)
                 || !(argument.Expression is IdentifierNameSyntax))
@@ -59,12 +51,7 @@ namespace Acnutech.Analyzers
                         SyntaxFactory.Token(SyntaxKind.OutKeyword)
                         .WithTriviaFrom(argument.RefKindKeyword));
 
-            documentEditor.ReplaceNode(
-                invocationExpression,
-                invocationExpression.WithArgumentList(
-                    invocationExpression.ArgumentList.ReplaceNode(
-                        argument,
-                        argumentWithoutRef)));
+            documentEditor.ReplaceNode(argument, argumentWithoutRef);
         }
     }
 }
