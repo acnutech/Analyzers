@@ -140,5 +140,32 @@ namespace Acnutech.Analyzers {
                 return ResourceManager.GetString("DuplicateMethodCallDiagnostic_Title", resourceCulture);
             }
         }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Suggests converting a void method with a single out parameter into a method that returns the value directly.
+        /// </summary>
+        internal static string OutParameterToReturnDiagnostic_Description {
+            get {
+                return ResourceManager.GetString("OutParameterToReturnDiagnostic_Description", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Method &apos;{0}&apos; can be refactored to return a value directly instead of using an out parameter..
+        /// </summary>
+        internal static string OutParameterToReturnDiagnostic_MessageFormat {
+            get {
+                return ResourceManager.GetString("OutParameterToReturnDiagnostic_MessageFormat", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Prefer return value over out parameter in void methods.
+        /// </summary>
+        internal static string OutParameterToReturnDiagnostic_Title {
+            get {
+                return ResourceManager.GetString("OutParameterToReturnDiagnostic_Title", resourceCulture);
+            }
+        }
     }
 }

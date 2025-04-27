@@ -153,4 +153,16 @@
     <value>Detects when both branches of a conditional call the same method with identical signatures but different argument values</value>
     <comment>An optional longer localizable description of the diagnostic.</comment>
   </data>
+  <data name="OutParameterToReturnDiagnostic_Title" xml:space="preserve">
+    <value>Prefer return value over out parameter in void methods</value>
+    <comment>The title of the diagnostic.</comment>
+  </data>
+  <data name="OutParameterToReturnDiagnostic_MessageFormat" xml:space="preserve">
+    <value>Method '{0}' can be refactored to return a value directly instead of using an out parameter.</value>
+    <comment>{0} - Method name (e.g., GetResult).</comment>
+  </data>
+  <data name="OutParameterToReturnDiagnostic_Description" xml:space="preserve">
+    <value>Suggests converting a void method with a single out parameter into a method that returns the value directly</value>
+    <comment>An optional longer localizable description of the diagnostic.</comment>
+  </data>
 </root>
