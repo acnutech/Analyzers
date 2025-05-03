@@ -129,4 +129,8 @@
     <value>Replace with a single method call using a conditional expression for unmatched argument.</value>
     <comment>The title of the code fix.</comment>
   </data>
+  <data name="OutParameterToReturnCodeFixTitle" xml:space="preserve">
+    <value>Replace an out parameter with the return value..</value>
+    <comment>The title of the code fix.</comment>
+  </data>
 </root>

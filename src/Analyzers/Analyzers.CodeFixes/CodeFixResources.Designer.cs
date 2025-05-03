@@ -79,6 +79,15 @@ namespace Acnutech.Analyzers {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Replace an out parameter with the return value...
+        /// </summary>
+        internal static string OutParameterToReturnCodeFixTitle {
+            get {
+                return ResourceManager.GetString("OutParameterToReturnCodeFixTitle", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Remove the ref modifier.
         /// </summary>
         internal static string RemoveRefModifierCodeFixTitle {
