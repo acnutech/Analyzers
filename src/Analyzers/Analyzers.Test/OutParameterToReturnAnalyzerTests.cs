@@ -1,7 +1,9 @@
 ﻿using System.Threading.Tasks;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using VerifyOutParameterToReturn = Microsoft.CodeAnalysis.CSharp.Testing.CSharpAnalyzerVerifier<
-    Acnutech.Analyzers.OutParameterToReturnAnalyzer, Microsoft.CodeAnalysis.Testing.DefaultVerifier>;
+using VerifyOutParameterToReturn = Microsoft.CodeAnalysis.CSharp.Testing.CSharpCodeFixVerifier<
+    Acnutech.Analyzers.OutParameterToReturnAnalyzer,
+    Acnutech.Analyzers.OutParameterToReturnCodeFixProvider,
+    Microsoft.CodeAnalysis.Testing.DefaultVerifier>;
 
 namespace Acnutech.Analyzers.Test;
 
@@ -24,13 +26,25 @@ public class OutParameterToReturnAnalyzerTests
             {
                 void MethodA({|#0:out|} int a)
                 {
-                  a = 1;
+                    a = 1;
+                }
+            }
+            """;
+
+        var fixedSource = /* lang=c#-test */"""
+            class Test
+            {
+                int MethodA()
+                {
+                    int a;
+                    a = 1;
+                    return a;
                 }
             }
             """;
 
         var expected = VerifyOutParameterToReturn.Diagnostic(OutParameterToReturnAnalyzer.Rule).WithLocation(0).WithArguments("MethodA");
-        await VerifyOutParameterToReturn.VerifyAnalyzerAsync(test, expected);
+        await VerifyOutParameterToReturn.VerifyCodeFixAsync(test, expected, fixedSource);
     }
 
     [TestMethod]
@@ -41,13 +55,66 @@ public class OutParameterToReturnAnalyzerTests
             {
                 void MethodA(string s, {|#0:out|} int a)
                 {
-                  a = 1;
+                    a = 1;
+                }
+            }
+            """;
+
+        var fixedSource = /* lang=c#-test */"""
+            class Test
+            {
+                int MethodA(string s)
+                {
+                    int a;
+                    a = 1;
+                    return a;
                 }
             }
             """;
 
         var expected = VerifyOutParameterToReturn.Diagnostic(OutParameterToReturnAnalyzer.Rule).WithLocation(0).WithArguments("MethodA");
-        await VerifyOutParameterToReturn.VerifyAnalyzerAsync(test, expected);
+        await VerifyOutParameterToReturn.VerifyCodeFixAsync(test, expected, fixedSource);
+    }
+
+    [TestMethod]
+    public async Task CallSides_AreUpdatedCorrectly()
+    {
+        var test = /* lang=c#-test */"""
+            class Test
+            {
+                void MethodA(int d, {|#0:out|} int a)
+                {
+                    a = 1;
+                }
+
+                void MethodB()
+                {
+                    int a;
+                    MethodA(5, out a);
+                }
+            }
+            """;
+
+        var fixedSource = /* lang=c#-test */"""
+            class Test
+            {
+                int MethodA(int d)
+                {
+                    int a;
+                    a = 1;
+                    return a;
+                }
+            
+                void MethodB()
+                {
+                    int a;
+                    a = MethodA(5);
+                }
+            }
+            """;
+
+        var expected = VerifyOutParameterToReturn.Diagnostic(OutParameterToReturnAnalyzer.Rule).WithLocation(0).WithArguments("MethodA");
+        await VerifyOutParameterToReturn.VerifyCodeFixAsync(test, expected, fixedSource);
     }
 
     [TestMethod]

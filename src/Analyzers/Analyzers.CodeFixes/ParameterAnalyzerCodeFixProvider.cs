@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading;
@@ -8,14 +9,13 @@ using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
-using Microsoft.CodeAnalysis.Editing;
 using Microsoft.CodeAnalysis.FindSymbols;
 using Microsoft.CodeAnalysis.Formatting;
 using Microsoft.CodeAnalysis.Text;
 
 namespace Acnutech.Analyzers
 {
-    public abstract class RefParameterAnalyzerCodeFixProvider : CodeFixProvider
+    public abstract class ParameterAnalyzerCodeFixProvider : CodeFixProvider
     {
         public sealed override FixAllProvider GetFixAllProvider()
         {
@@ -25,6 +25,10 @@ namespace Acnutech.Analyzers
 
         protected abstract string Title { get; }
         protected abstract string EquivalenceKey { get; }
+
+        protected ParameterAnalyzerCodeFixProvider()
+        {
+        }
 
         public sealed override async Task RegisterCodeFixesAsync(CodeFixContext context)
         {
@@ -54,7 +58,7 @@ namespace Acnutech.Analyzers
             }
 
             var refModifier = parameterSyntax.Modifiers[0];
-            if (!refModifier.IsKind(SyntaxKind.RefKeyword))
+            if (!refModifier.IsKind(FixedModifier))
             {
                 return document.Project.Solution;
             }
@@ -83,12 +87,9 @@ namespace Acnutech.Analyzers
             return solution;
         }
 
-        private async Task<Solution> UpdateDocument(
-            Solution solution,
-            DocumentId documentId,
-            IEnumerable<Edit> places,
-            UpdateContext updateContext,
-            CancellationToken cancellationToken)
+        protected abstract SyntaxKind FixedModifier { get; }
+
+        protected virtual async Task<Solution> UpdateDocument(Solution solution, DocumentId documentId, IEnumerable<Edit> places, UpdateContext updateContext, CancellationToken cancellationToken)
         {
             var referenceDocument = solution.GetDocument(documentId);
             if (referenceDocument == null)
@@ -96,75 +97,37 @@ namespace Acnutech.Analyzers
                 return solution;
             }
 
-            var documentEditor = await DocumentEditor.CreateAsync(referenceDocument, cancellationToken);
             var documentSyntaxRoot = await referenceDocument.GetSyntaxRootAsync(cancellationToken);
+            ImmutableHashSet<SyntaxNode> nodes = places
+                .Select(place => GetNodeFromEdit(updateContext, place, documentSyntaxRoot))
+                .ToImmutableHashSet();
 
-            var orderedEdits = TransformUpdatePlaces(updateContext, documentSyntaxRoot, places)
-                .OrderByDescending(sp => sp.Span.Start);
+            var walker = CreateSyntaxRewriter(updateContext, nodes);
+            var updatedDocument = walker.Visit(documentSyntaxRoot);
 
-            foreach (var edit in orderedEdits)
+            if (updatedDocument == documentSyntaxRoot)
             {
-                var node = documentSyntaxRoot.FindNode(edit.Span);
-
-                PerformEdit(updateContext, documentEditor, edit, node);
+                return solution;
             }
 
-            var updatedDocument = documentEditor.GetChangedDocument();
-            var formattedDocument = await Formatter.FormatAsync(updatedDocument, Formatter.Annotation, cancellationToken: cancellationToken);
+            var formattedDocument = await Formatter.FormatAsync(referenceDocument.WithSyntaxRoot(updatedDocument), Formatter.Annotation, cancellationToken: cancellationToken);
             return formattedDocument.Project.Solution;
-        }
-
-        private void PerformEdit(UpdateContext updateContext, DocumentEditor documentEditor, Edit edit, SyntaxNode node)
-        {
-            if (edit is ParameterEdit)
-            {
-                UpdateRefParameter(documentEditor, node);
-            }
-            else
-            {
-                UpdateRefArgument(documentEditor, node);
-            }
         }
 
         protected virtual UpdateContext CreateContext(ParameterSyntax parameterSyntax, MethodDeclarationSyntax methodDeclarationSyntax, IMethodSymbol methodSymbol)
             => new UpdateContext(methodDeclarationSyntax.ParameterList.Parameters.IndexOf(parameterSyntax));
 
-        protected virtual IEnumerable<Edit> TransformUpdatePlaces(UpdateContext context, SyntaxNode documentRootNode, IEnumerable<Edit> edits)
-        {
-            foreach (var edit in edits)
-            {
-                switch (edit)
-                {
-                    case ParameterEdit parameterUpdatePlace:
-                        yield return parameterUpdatePlace;
-                        break;
-                    case ReferencedMethodEdit referenceMethodUpdatePlace:
-                        var node = documentRootNode.FindNode(referenceMethodUpdatePlace.Span);
-                        var invocationExpression = node.FirstAncestorOrSelf<InvocationExpressionSyntax>();
-                        if (invocationExpression != null)
-                        {
-                            var arguments = invocationExpression.ArgumentList.Arguments;
-                            if (arguments.Count > context.RefParameterIndex)
-                            {
-                                yield return new ArgumentEdit(arguments[context.RefParameterIndex].Span);
-                            }
-                        }
-                        break;
-                }
-            }
-        }
+        protected abstract SyntaxNode GetNodeFromEdit(UpdateContext updateContext, Edit edit, SyntaxNode root);
 
-        protected abstract void UpdateRefParameter(DocumentEditor documentEditor, SyntaxNode node);
-
-        protected abstract void UpdateRefArgument(DocumentEditor documentEditor, SyntaxNode node);
+        protected abstract CSharpSyntaxRewriter CreateSyntaxRewriter(UpdateContext updateContext, ImmutableHashSet<SyntaxNode> nodes);
 
         protected class UpdateContext
         {
-            public int RefParameterIndex { get; }
+            public int ParameterIndex { get; }
 
             public UpdateContext(int refParameterIndex)
             {
-                RefParameterIndex = refParameterIndex;
+                ParameterIndex = refParameterIndex;
             }
         }
 
@@ -173,7 +136,7 @@ namespace Acnutech.Analyzers
         {
             public readonly TextSpan Span;
 
-            public Edit(TextSpan textSpan)
+            protected Edit(TextSpan textSpan)
             {
                 Span = textSpan;
             }
@@ -189,13 +152,6 @@ namespace Acnutech.Analyzers
         protected class ReferencedMethodEdit : Edit
         {
             public ReferencedMethodEdit(TextSpan textSpan) : base(textSpan)
-            {
-            }
-        }
-
-        protected class ArgumentEdit : Edit
-        {
-            public ArgumentEdit(TextSpan textSpan) : base(textSpan)
             {
             }
         }
