@@ -118,6 +118,39 @@ public class OutParameterToReturnAnalyzerTests
     }
 
     [TestMethod]
+    public async Task NestedMethodWithSingleOutParameter_IsRefactored()
+    {
+        var test = /* lang=c#-test */"""
+            class Test
+            {
+                void MethodA({|#0:out|} int a)
+                {
+                    a = 1;
+                    int b = 2;
+                    MethodA(out b);
+                }
+            }
+            """;
+
+        var fixedSource = /* lang=c#-test */"""
+            class Test
+            {
+                int MethodA()
+                {
+                    int a;
+                    a = 1;
+                    int b = 2;
+                    b = MethodA();
+                    return a;
+                }
+            }
+            """;
+
+        var expected = VerifyOutParameterToReturn.Diagnostic(OutParameterToReturnAnalyzer.Rule).WithLocation(0).WithArguments("MethodA");
+        await VerifyOutParameterToReturn.VerifyCodeFixAsync(test, expected, fixedSource);
+    }
+
+    [TestMethod]
     public async Task MethodWithNoOutParameters_IsIgnored()
     {
         var test = /* lang=c#-test */"""

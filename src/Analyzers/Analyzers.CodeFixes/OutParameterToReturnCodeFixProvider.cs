@@ -78,23 +78,23 @@ namespace Acnutech.Analyzers
             public override SyntaxNode VisitMethodDeclaration(MethodDeclarationSyntax node)
             {
                 var newNode = base.VisitMethodDeclaration(node);
-                if (!nodes.Contains(node))
+                if (!(newNode is MethodDeclarationSyntax methodSyntax) || !nodes.Contains(node))
                 {
                     return newNode;
                 }
 
-                var parameter = node.ParameterList.Parameters[parameterIndex];
+                var parameter = methodSyntax.ParameterList.Parameters[parameterIndex];
 
-                var bodyStatements = node.Body.Statements
+                var bodyStatements = methodSyntax.Body.Statements
                     .Insert(0, SyntaxFactory.LocalDeclarationStatement(
                         SyntaxFactory.VariableDeclaration(parameter.Type,
                             SyntaxFactory.SingletonSeparatedList(SyntaxFactory.VariableDeclarator(parameter.Identifier)))))
                     .Add(SyntaxFactory.ReturnStatement(SyntaxFactory.IdentifierName(parameter.Identifier)));
 
-                return node
-                    .WithReturnType(parameter.Type.WithLeadingTrivia(node.ReturnType.GetLeadingTrivia()))
+                return methodSyntax
+                    .WithReturnType(parameter.Type.WithLeadingTrivia(methodSyntax.ReturnType.GetLeadingTrivia()))
                     .WithParameterList(
-                        node.ParameterList.WithParameters(node.ParameterList.Parameters.Remove(parameter)))
+                        methodSyntax.ParameterList.WithParameters(methodSyntax.ParameterList.Parameters.Remove(parameter)))
                     .WithBody(SyntaxFactory.Block(bodyStatements));
             }
         }
