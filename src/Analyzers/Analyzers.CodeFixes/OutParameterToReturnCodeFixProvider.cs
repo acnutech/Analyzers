@@ -13,7 +13,7 @@ namespace Acnutech.Analyzers
     {
         public sealed override ImmutableArray<string> FixableDiagnosticIds
         {
-            get { return ImmutableArray.Create(OutParameterToReturnAnalyzer.DiagnosticId); }
+            get { return ImmutableArray.Create(OutParameterToReturnAnalyzer.SingleOutParameterDiagnostic.Id); }
         }
 
         protected override string Title => CodeFixResources.OutParameterToReturnCodeFixTitle;

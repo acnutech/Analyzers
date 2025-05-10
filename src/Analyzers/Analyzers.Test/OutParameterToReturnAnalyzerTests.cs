@@ -43,7 +43,7 @@ public class OutParameterToReturnAnalyzerTests
             }
             """;
 
-        var expected = VerifyOutParameterToReturn.Diagnostic(OutParameterToReturnAnalyzer.Rule).WithLocation(0).WithArguments("MethodA");
+        var expected = VerifyOutParameterToReturn.Diagnostic(OutParameterToReturnAnalyzer.SingleOutParameterDiagnostic.Rule).WithLocation(0).WithArguments("MethodA");
         await VerifyOutParameterToReturn.VerifyCodeFixAsync(test, expected, fixedSource);
     }
 
@@ -72,7 +72,7 @@ public class OutParameterToReturnAnalyzerTests
             }
             """;
 
-        var expected = VerifyOutParameterToReturn.Diagnostic(OutParameterToReturnAnalyzer.Rule).WithLocation(0).WithArguments("MethodA");
+        var expected = VerifyOutParameterToReturn.Diagnostic(OutParameterToReturnAnalyzer.SingleOutParameterDiagnostic.Rule).WithLocation(0).WithArguments("MethodA");
         await VerifyOutParameterToReturn.VerifyCodeFixAsync(test, expected, fixedSource);
     }
 
@@ -113,7 +113,7 @@ public class OutParameterToReturnAnalyzerTests
             }
             """;
 
-        var expected = VerifyOutParameterToReturn.Diagnostic(OutParameterToReturnAnalyzer.Rule).WithLocation(0).WithArguments("MethodA");
+        var expected = VerifyOutParameterToReturn.Diagnostic(OutParameterToReturnAnalyzer.SingleOutParameterDiagnostic.Rule).WithLocation(0).WithArguments("MethodA");
         await VerifyOutParameterToReturn.VerifyCodeFixAsync(test, expected, fixedSource);
     }
 
@@ -146,7 +146,7 @@ public class OutParameterToReturnAnalyzerTests
             }
             """;
 
-        var expected = VerifyOutParameterToReturn.Diagnostic(OutParameterToReturnAnalyzer.Rule).WithLocation(0).WithArguments("MethodA");
+        var expected = VerifyOutParameterToReturn.Diagnostic(OutParameterToReturnAnalyzer.SingleOutParameterDiagnostic.Rule).WithLocation(0).WithArguments("MethodA");
         await VerifyOutParameterToReturn.VerifyCodeFixAsync(test, expected, fixedSource);
     }
 
@@ -167,12 +167,12 @@ public class OutParameterToReturnAnalyzerTests
     }
 
     [TestMethod]
-    public async Task MethodWithMultipleOutParameters_IsIgnored()
+    public async Task MethodWithMultipleOutParameters_IsReported()
     {
         var test = /* lang=c#-test */"""
             class Test
             {
-                void MethodA(out string s, out int a)
+                {|#0:void|} MethodA(out string s, out int a)
                 {
                   a = 1;
                   s = "";
@@ -180,7 +180,8 @@ public class OutParameterToReturnAnalyzerTests
             }
             """;
 
-        await VerifyOutParameterToReturn.VerifyAnalyzerAsync(test);
+        var expected = VerifyOutParameterToReturn.Diagnostic(OutParameterToReturnAnalyzer.MultipleOutParametersDiagnostic.Rule).WithLocation(0).WithArguments("MethodA");
+        await VerifyOutParameterToReturn.VerifyAnalyzerAsync(test, expected);
     }
 
     [TestMethod]
@@ -301,6 +302,23 @@ public class OutParameterToReturnAnalyzerTests
                 public void MethodA([System.ComponentModel.Description("")] out string s)
                 {
                     s = "";
+                }
+            }
+            """;
+
+        await VerifyOutParameterToReturn.VerifyAnalyzerAsync(test);
+    }
+
+    [TestMethod]
+    public async Task MethodWithAnyAttributedOutParameter_IsIgnored()
+    {
+        var test = /* lang=c#-test */"""
+            class Test
+            {
+                public void MethodA(out string d, [System.ComponentModel.Description("")] out string s)
+                {
+                    s = "";
+                    d = "";
                 }
             }
             """;

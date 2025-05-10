@@ -142,6 +142,33 @@ namespace Acnutech.Analyzers {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Modern C# prefers tuple returns over out parameters for multiple return values. This makes the method signature clearer and allows for inline tuple deconstruction..
+        /// </summary>
+        internal static string OutParametersToTupleDiagnostic_Description {
+            get {
+                return ResourceManager.GetString("OutParametersToTupleDiagnostic_Description", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Method &apos;{0}&apos; can be refactored to return a tuple instead of using out parameters..
+        /// </summary>
+        internal static string OutParametersToTupleDiagnostic_MessageFormat {
+            get {
+                return ResourceManager.GetString("OutParametersToTupleDiagnostic_MessageFormat", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Prefer returning a tuple over using out parameters in a void method.
+        /// </summary>
+        internal static string OutParametersToTupleDiagnostic_Title {
+            get {
+                return ResourceManager.GetString("OutParametersToTupleDiagnostic_Title", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Suggests converting a void method with a single out parameter into a method that returns the value directly.
         /// </summary>
         internal static string OutParameterToReturnDiagnostic_Description {
