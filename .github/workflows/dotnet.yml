@@ -34,7 +34,7 @@ jobs:
     - name: Setup .NET
       uses: actions/setup-dotnet@v4
       with:
-        dotnet-version: 9.0.200
+        global-json-file: ./src/global.json
     - run: dotnet tool install -g GitVersion.Tool --version 6.1.0
     - name: Resolve version
       id: version
