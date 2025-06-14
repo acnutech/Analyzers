@@ -13,7 +13,7 @@ public class DuplicateMethodCallAnalyzerTests
     [TestMethod]
     public async Task EmptyFile_IsIgnored()
     {
-        var source = @"";
+        var source = "";
 
         await VerifyDuplicateMethodCall.VerifyAnalyzerAsync(source);
     }
@@ -534,6 +534,197 @@ public class DuplicateMethodCallAnalyzerTests
             .WithLocation(0)
             .WithArguments("MethodC");
         await VerifyDuplicateMethodCall.VerifyCodeFixAsync(source, expected, fixedSource);
+    }
+
+    [TestMethod]
+    public async Task DuplicateCalls_OneWithReturn()
+    {
+        var source = /* lang=c#-test */"""
+            class Test
+            {
+                System.Exception MethodA() {
+                    var a = true;
+                    {|#0:if|} (a)
+                    {
+                        MethodB(0);
+                    }
+                    else
+                    {
+                        return MethodB(1);
+                    }
+
+                    return default;
+                }
+
+                System.Exception MethodB(int a) {
+                    return default;
+                }
+            }
+            """;
+
+        await VerifyDuplicateMethodCall.VerifyAnalyzerAsync(source);
+    }
+    
+    [TestMethod]
+    public async Task DuplicateCalls_OneWithThrow()
+    {
+        var source = /* lang=c#-test */"""
+            class Test
+            {
+                void MethodA() {
+                    var a = true;
+                    {|#0:if|} (a)
+                    {
+                        MethodB(0);
+                    }
+                    else
+                    {
+                        throw MethodB(1);
+                    }
+                }
+
+                System.Exception MethodB(int a) {
+                    return default;
+                }
+            }
+            """;
+
+        await VerifyDuplicateMethodCall.VerifyAnalyzerAsync(source);
+    }
+
+    [TestMethod]
+    public async Task DuplicateCalls_WithThrowAndReturn()
+    {
+        var source = /* lang=c#-test */"""
+            class Test
+            {
+                System.Exception MethodA() {
+                    var a = true;
+                    {|#0:if|} (a)
+                    {
+                        throw MethodB(0);
+                    }
+                    else
+                    {
+                        return MethodB(1);
+                    }
+                }
+
+                System.Exception MethodB(int a) {
+                    return new System.Exception();
+                }
+            }
+            """;
+
+        await VerifyDuplicateMethodCall.VerifyAnalyzerAsync(source);
+    }
+
+    [TestMethod]
+    public async Task DuplicateCalls_WithThrow()
+    {
+        var source = /* lang=c#-test */"""
+            class Test
+            {
+                void MethodA() {
+                    var a = true;
+                    {|#0:if|} (a)
+                    {
+                        throw MethodB(0);
+                    }
+                    else
+                    {
+                        throw MethodB(1);
+                    }
+                }
+
+                System.Exception MethodB(int a) {
+                    return new System.Exception();
+                }
+            }
+            """;
+        
+        var fixedSource = /* lang=c#-test */"""
+            class Test
+            {
+                void MethodA() {
+                    var a = true;
+                    throw MethodB(a ? 0 : 1);
+                }
+            
+                System.Exception MethodB(int a) {
+                    return new System.Exception();
+                }
+            }
+            """;
+
+        var expected = VerifyDuplicateMethodCall.Diagnostic(DuplicateMethodCallAnalyzer.Rule)
+            .WithLocation(0)
+            .WithArguments("MethodB");
+        await VerifyDuplicateMethodCall.VerifyCodeFixAsync(source, expected, fixedSource);
+    }
+
+    [TestMethod]
+    public async Task DuplicateCalls_WithReturn()
+    {
+        var source = /* lang=c#-test */"""
+            class Test
+            {
+                int MethodA() {
+                    var a = true;
+                    {|#0:if|} (a)
+                    {
+                        return MethodB(0);
+                    }
+                    else
+                    {
+                        return MethodB(1);
+                    }
+                }
+
+                int MethodB(int a) {
+                    return a;
+                }
+            }
+            """;
+        
+        var fixedSource = /* lang=c#-test */"""
+            class Test
+            {
+                int MethodA() {
+                    var a = true;
+                    return MethodB(a ? 0 : 1);
+                }
+            
+                int MethodB(int a) {
+                    return a;
+                }
+            }
+            """;
+
+        var expected = VerifyDuplicateMethodCall.Diagnostic(DuplicateMethodCallAnalyzer.Rule)
+            .WithLocation(0)
+            .WithArguments("MethodB");
+        await VerifyDuplicateMethodCall.VerifyCodeFixAsync(source, expected, fixedSource);
+    }
+
+    [TestMethod]
+    public async Task ConditionalDuplicateCalls_WithThrow()
+    {
+        var source = /* lang=c#-test */"""
+            class Test
+            {
+                void MethodA() {
+                    var a = true;
+                    var c = a ? throw MethodB(0) : MethodB(1);
+                }
+
+                System.Exception MethodB(int a) {
+                    return new System.Exception();
+                }
+            }
+            """;
+
+        await VerifyDuplicateMethodCall.VerifyAnalyzerAsync(source);
     }
 
     [TestMethod]

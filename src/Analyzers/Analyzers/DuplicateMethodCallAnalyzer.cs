@@ -60,7 +60,10 @@ namespace Acnutech.Analyzers
             var invocationInThenBranch = GetInvocationExpression(ifStatementSyntax.Statement);
             var invocationInElseBranch = GetInvocationExpression(ifStatementSyntax.Else.Statement);
 
-            RegisterDiagnosticIfDuplicatedCall(context, invocationInThenBranch, invocationInElseBranch, ifStatementSyntax.IfKeyword.GetLocation());
+            if (invocationInThenBranch.Kind == invocationInElseBranch.Kind)
+            {
+                RegisterDiagnosticIfDuplicatedCall(context, invocationInThenBranch.Invocation, invocationInElseBranch.Invocation, ifStatementSyntax.IfKeyword.GetLocation());
+            }
         }
 
         private static void RegisterDiagnosticIfDuplicatedCall(
@@ -82,7 +85,6 @@ namespace Acnutech.Analyzers
                 return;
             }
 
-
             if (!(context.SemanticModel.GetSymbolInfo(invocationInThenBranch).Symbol is IMethodSymbol thenBranchMethodSymbol)
                 || !(context.SemanticModel.GetSymbolInfo(invocationInElseBranch).Symbol is IMethodSymbol elseBranchMethodSymbol))
             {
@@ -102,7 +104,7 @@ namespace Acnutech.Analyzers
                 return;
             }
 
-            if (matchingArguments.Where(a => a == ArgumentComparisonResult.Different).Count() != 1)
+            if (matchingArguments.Count(a => a == ArgumentComparisonResult.Different) != 1)
             {
                 // Not exactly one argument is different
                 return;
@@ -134,14 +136,14 @@ namespace Acnutech.Analyzers
             NotComparable
         }
 
-        private static InvocationExpressionSyntax GetInvocationExpression(CSharpSyntaxNode node)
+        private static (SyntaxKind? Kind, InvocationExpressionSyntax Invocation) GetInvocationExpression(CSharpSyntaxNode node)
         {
             if (node is BlockSyntax blockSyntax)
             {
                 node = blockSyntax.Statements.SingleOrDefaultIfMultiple();
             }
 
-            return node?.ChildNodes().SingleOrDefaultIfMultiple() as InvocationExpressionSyntax;
+            return (node?.Kind(), node?.ChildNodes().SingleOrDefaultIfMultiple() as InvocationExpressionSyntax);
         }
 
         private static LocalizableResourceString GetLocalizableString(string name)
