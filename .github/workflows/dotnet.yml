@@ -65,10 +65,6 @@ jobs:
     - uses: actions/checkout@v4
     - name: Update version in VSIX manifest
       run: (Get-Content source.extension.vsixmanifest) -creplace 'Version="0.1.0"', 'Version="${{ needs.pre_build.outputs.mmpVersion}}"' | Set-Content source.extension.vsixmanifest
-    - name: Setup .NET
-      uses: actions/setup-dotnet@v4
-      with:
-        global-json-file: ./src/global.json
     - name: Setup MSBuild
       uses: microsoft/setup-msbuild@v1         
     - name: Show MSBuild version
