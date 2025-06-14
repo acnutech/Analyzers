@@ -8,6 +8,7 @@ using VerifyOutParametersToTuple = Microsoft.CodeAnalysis.CSharp.Testing.CSharpC
     Acnutech.Analyzers.OutParameterToReturnAnalyzer,
     Acnutech.Analyzers.OutParametersToTupleCodeFixProvider,
     Microsoft.CodeAnalysis.Testing.DefaultVerifier>;
+
 namespace Acnutech.Analyzers.Test;
 
 [TestClass]
