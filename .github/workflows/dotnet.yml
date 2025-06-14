@@ -71,6 +71,8 @@ jobs:
         global-json-file: ./src/global.json
     - name: Setup MSBuild
       uses: microsoft/setup-msbuild@v1         
+    - name: Show MSBuild version
+      run: msbuild -version
     - name: Restore dependencies
       working-directory: ./src
       run: dotnet restore
