@@ -67,6 +67,8 @@ jobs:
       run: (Get-Content source.extension.vsixmanifest) -creplace 'Version="0.1.0"', 'Version="${{ needs.pre_build.outputs.mmpVersion}}"' | Set-Content source.extension.vsixmanifest
     - name: Setup MSBuild
       uses: microsoft/setup-msbuild@v1         
+    - name: Show MSBuild version
+      run: msbuild -version
     - name: Restore dependencies
       working-directory: ./src
       run: dotnet restore
