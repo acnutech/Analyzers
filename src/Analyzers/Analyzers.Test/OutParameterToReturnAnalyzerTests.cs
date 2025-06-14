@@ -4,6 +4,10 @@ using VerifyOutParameterToReturn = Microsoft.CodeAnalysis.CSharp.Testing.CSharpC
     Acnutech.Analyzers.OutParameterToReturnAnalyzer,
     Acnutech.Analyzers.OutParameterToReturnCodeFixProvider,
     Microsoft.CodeAnalysis.Testing.DefaultVerifier>;
+using VerifyOutParametersToTuple = Microsoft.CodeAnalysis.CSharp.Testing.CSharpCodeFixVerifier<
+    Acnutech.Analyzers.OutParameterToReturnAnalyzer,
+    Acnutech.Analyzers.OutParametersToTupleCodeFixProvider,
+    Microsoft.CodeAnalysis.Testing.DefaultVerifier>;
 
 namespace Acnutech.Analyzers.Test;
 
@@ -43,7 +47,7 @@ public class OutParameterToReturnAnalyzerTests
             }
             """;
 
-        var expected = VerifyOutParameterToReturn.Diagnostic(OutParameterToReturnAnalyzer.Rule).WithLocation(0).WithArguments("MethodA");
+        var expected = VerifyOutParameterToReturn.Diagnostic(OutParameterToReturnAnalyzer.SingleOutParameterDiagnostic.Rule).WithLocation(0).WithArguments("MethodA");
         await VerifyOutParameterToReturn.VerifyCodeFixAsync(test, expected, fixedSource);
     }
 
@@ -72,7 +76,7 @@ public class OutParameterToReturnAnalyzerTests
             }
             """;
 
-        var expected = VerifyOutParameterToReturn.Diagnostic(OutParameterToReturnAnalyzer.Rule).WithLocation(0).WithArguments("MethodA");
+        var expected = VerifyOutParameterToReturn.Diagnostic(OutParameterToReturnAnalyzer.SingleOutParameterDiagnostic.Rule).WithLocation(0).WithArguments("MethodA");
         await VerifyOutParameterToReturn.VerifyCodeFixAsync(test, expected, fixedSource);
     }
 
@@ -113,7 +117,40 @@ public class OutParameterToReturnAnalyzerTests
             }
             """;
 
-        var expected = VerifyOutParameterToReturn.Diagnostic(OutParameterToReturnAnalyzer.Rule).WithLocation(0).WithArguments("MethodA");
+        var expected = VerifyOutParameterToReturn.Diagnostic(OutParameterToReturnAnalyzer.SingleOutParameterDiagnostic.Rule).WithLocation(0).WithArguments("MethodA");
+        await VerifyOutParameterToReturn.VerifyCodeFixAsync(test, expected, fixedSource);
+    }
+
+    [TestMethod]
+    public async Task NestedMethodWithSingleOutParameter_IsRefactored()
+    {
+        var test = /* lang=c#-test */"""
+            class Test
+            {
+                void MethodA({|#0:out|} int a)
+                {
+                    a = 1;
+                    int b = 2;
+                    MethodA(out b);
+                }
+            }
+            """;
+
+        var fixedSource = /* lang=c#-test */"""
+            class Test
+            {
+                int MethodA()
+                {
+                    int a;
+                    a = 1;
+                    int b = 2;
+                    b = MethodA();
+                    return a;
+                }
+            }
+            """;
+
+        var expected = VerifyOutParameterToReturn.Diagnostic(OutParameterToReturnAnalyzer.SingleOutParameterDiagnostic.Rule).WithLocation(0).WithArguments("MethodA");
         await VerifyOutParameterToReturn.VerifyCodeFixAsync(test, expected, fixedSource);
     }
 
@@ -134,20 +171,104 @@ public class OutParameterToReturnAnalyzerTests
     }
 
     [TestMethod]
-    public async Task MethodWithMultipleOutParameters_IsIgnored()
+    public async Task MethodWithMultipleOutParameters_IsReported()
     {
         var test = /* lang=c#-test */"""
             class Test
             {
-                void MethodA(out string s, out int a)
+                {|#0:void|} MethodA(out string s, out int a)
                 {
-                  a = 1;
-                  s = "";
+                    a = 1;
+                    s = "";
+                }
+            }
+            """;
+        var fixedSource = /* lang=c#-test */"""
+            class Test
+            {
+                (string s, int a) MethodA()
+                {
+                    string s;
+                    int a;
+                    a = 1;
+                    s = "";
+                    return (s, a);
                 }
             }
             """;
 
-        await VerifyOutParameterToReturn.VerifyAnalyzerAsync(test);
+        var expected = VerifyOutParametersToTuple.Diagnostic(OutParameterToReturnAnalyzer.MultipleOutParametersDiagnostic.Rule).WithLocation(0).WithArguments("MethodA");
+        await VerifyOutParametersToTuple.VerifyCodeFixAsync(test, expected, fixedSource);
+    }
+
+    [TestMethod]
+    public async Task MethodWithMultipleOutParameters_HasReferencedFixed()
+    {
+        var test = /* lang=c#-test */"""
+            class Test
+            {
+                {|#0:void|} MethodA(out string s, out int a)
+                {
+                    MethodA(out s, out a);
+                }
+            }
+            """;
+        var fixedSource = /* lang=c#-test */"""
+            class Test
+            {
+                (string s, int a) MethodA()
+                {
+                    string s;
+                    int a;
+                    (s, a) = MethodA();
+                    return (s, a);
+                }
+            }
+            """;
+
+        var expected = VerifyOutParametersToTuple.Diagnostic(OutParameterToReturnAnalyzer.MultipleOutParametersDiagnostic.Rule).WithLocation(0).WithArguments("MethodA");
+        await VerifyOutParametersToTuple.VerifyCodeFixAsync(test, expected, fixedSource);
+    }
+
+    [TestMethod]
+    public async Task MethodWithMultipleOutParameters_HasReferencedWithDeclarationsFixed()
+    {
+        var test = /* lang=c#-test */"""
+            class Test
+            {
+                {|#0:void|} MethodA(out string s, out int a)
+                {
+                    s = "";
+                    a = 1;
+                }
+
+                void MethodB()
+                {
+                    MethodA(out var s, out int a);
+                }
+            }
+            """;
+        var fixedSource = /* lang=c#-test */"""
+            class Test
+            {
+                (string s, int a) MethodA()
+                {
+                    string s;
+                    int a;
+                    s = "";
+                    a = 1;
+                    return (s, a);
+                }
+            
+                void MethodB()
+                {
+                    (var s, int a) = MethodA();
+                }
+            }
+            """;
+
+        var expected = VerifyOutParametersToTuple.Diagnostic(OutParameterToReturnAnalyzer.MultipleOutParametersDiagnostic.Rule).WithLocation(0).WithArguments("MethodA");
+        await VerifyOutParametersToTuple.VerifyCodeFixAsync(test, expected, fixedSource);
     }
 
     [TestMethod]
@@ -268,6 +389,23 @@ public class OutParameterToReturnAnalyzerTests
                 public void MethodA([System.ComponentModel.Description("")] out string s)
                 {
                     s = "";
+                }
+            }
+            """;
+
+        await VerifyOutParameterToReturn.VerifyAnalyzerAsync(test);
+    }
+
+    [TestMethod]
+    public async Task MethodWithAnyAttributedOutParameter_IsIgnored()
+    {
+        var test = /* lang=c#-test */"""
+            class Test
+            {
+                public void MethodA(out string d, [System.ComponentModel.Description("")] out string s)
+                {
+                    s = "";
+                    d = "";
                 }
             }
             """;
