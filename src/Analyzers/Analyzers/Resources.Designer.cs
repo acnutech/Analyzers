@@ -194,5 +194,32 @@ namespace Acnutech.Analyzers {
                 return ResourceManager.GetString("OutParameterToReturnDiagnostic_Title", resourceCulture);
             }
         }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Detects and flags calls to System.Convert.To methods where the argument&apos;s type is already the same as the method&apos;s return type. Such conversions are redundant and can be safely removed, simplifying the code and slightly improving performance..
+        /// </summary>
+        internal static string RedundantConvertDiagnostic_Description {
+            get {
+                return ResourceManager.GetString("RedundantConvertDiagnostic_Description", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The call to Convert.{0} is redundant. The argument&apos;s type is already {1}.
+        /// </summary>
+        internal static string RedundantConvertDiagnostic_MessageFormat {
+            get {
+                return ResourceManager.GetString("RedundantConvertDiagnostic_MessageFormat", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Remove redundant usage of Convert.{0}.
+        /// </summary>
+        internal static string RedundantConvertDiagnostic_Title {
+            get {
+                return ResourceManager.GetString("RedundantConvertDiagnostic_Title", resourceCulture);
+            }
+        }
     }
 }
