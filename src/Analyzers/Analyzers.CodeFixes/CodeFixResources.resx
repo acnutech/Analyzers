@@ -133,4 +133,7 @@
     <value>Replace an out parameter with the return value..</value>
     <comment>The title of the code fix.</comment>
   </data>
+  <data name="RedundantConvertCodeFixTitle" xml:space="preserve">
+    <value>Remove redundant Convert.To method</value>
+  </data>
 </root>

@@ -1,7 +1,8 @@
 ﻿using System.Threading.Tasks;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using VerifRedundantConvert = Microsoft.CodeAnalysis.CSharp.Testing.CSharpAnalyzerVerifier<
+using VerifRedundantConvert = Microsoft.CodeAnalysis.CSharp.Testing.CSharpCodeFixVerifier<
     Acnutech.Analyzers.RedundantConvertAnalyzer,
+    Acnutech.Analyzers.RedundantConvertCodeFixProvider,
     Microsoft.CodeAnalysis.Testing.DefaultVerifier>;
 
 namespace Acnutech.Analyzers.Test;
@@ -28,11 +29,18 @@ public class RedundantConvertAnalyzerTests
                 }
             }
             """;
-
+        var fixedSource = /* lang=c#-test */"""
+            class Test
+            {
+                void MethodA() {
+                    var a = 4;
+                }
+            }
+            """;
         var expected = VerifRedundantConvert.Diagnostic(RedundantConvertAnalyzer.Rule)
             .WithLocation(0)
             .WithArguments("ToInt32", "int");
-        await VerifRedundantConvert.VerifyAnalyzerAsync(source, expected);
+        await VerifRedundantConvert.VerifyCodeFixAsync(source, expected, fixedSource);
     }
 
     [TestMethod]
@@ -47,11 +55,20 @@ public class RedundantConvertAnalyzerTests
                 }
             }
             """;
+        var fixedSource = /* lang=c#-test */"""
+            using System;
+            class Test
+            {
+                void MethodA() {
+                    var a = 3.0;
+                }
+            }
+            """;
 
         var expected = VerifRedundantConvert.Diagnostic(RedundantConvertAnalyzer.Rule)
             .WithLocation(0)
             .WithArguments("ToDouble", "double");
-        await VerifRedundantConvert.VerifyAnalyzerAsync(source, expected);
+        await VerifRedundantConvert.VerifyCodeFixAsync(source, expected, fixedSource);
     }
 
     [TestMethod]
@@ -67,11 +84,72 @@ public class RedundantConvertAnalyzerTests
                 }
             }
             """;
+        var fixedSource = /* lang=c#-test */"""
+            using System;
+            class Test
+            {
+                void MethodA() {
+                    var a = 3.0;
+                    var b = a + 3;
+                }
+            }
+            """;
 
         var expected = VerifRedundantConvert.Diagnostic(RedundantConvertAnalyzer.Rule)
             .WithLocation(0)
             .WithArguments("ToDouble", "double");
-        await VerifRedundantConvert.VerifyAnalyzerAsync(source, expected);
+        await VerifRedundantConvert.VerifyCodeFixAsync(source, expected, fixedSource);
+    }
+
+    [TestMethod]
+    public async Task ReportsDiagnostic_FixPreservingTrivia()
+    {
+        var source = /* lang=c#-test */"""
+            using System;
+            class Test
+            {
+                void MethodA() {
+                    var a = true
+                      ? /* a */{|#0:Convert.ToInt32|}(/* b */3 /* c */) /* d */
+                      : 2;
+                }
+            }
+            """;
+        var fixedSource = /* lang=c#-test */"""
+            using System;
+            class Test
+            {
+                void MethodA() {
+                    var a = true
+                      ? /* a *//* b */3 /* c */ /* d */
+                      : 2;
+                }
+            }
+            """;
+
+        var expected = VerifRedundantConvert.Diagnostic(RedundantConvertAnalyzer.Rule)
+            .WithLocation(0)
+            .WithArguments("ToInt32", "int");
+        await VerifRedundantConvert.VerifyCodeFixAsync(source, expected, fixedSource);
+    }
+
+    [TestMethod]
+    public async Task ReportsDiagnostic_WhenResultIsNotAssigned_KeepsCodeUnchanged()
+    {
+        var source = /* lang=c#-test */"""
+            class Test
+            {
+                void MethodA() {
+                    {|#0:System.Convert.ToInt32|}(3);
+                }
+            }
+            """;
+
+        var expected = VerifRedundantConvert.Diagnostic(RedundantConvertAnalyzer.Rule)
+            .WithLocation(0)
+            .WithArguments("ToInt32", "int");
+        // No code fix is applied because the result is not used.
+        await VerifRedundantConvert.VerifyCodeFixAsync(source, expected, source);
     }
 
     [TestMethod]

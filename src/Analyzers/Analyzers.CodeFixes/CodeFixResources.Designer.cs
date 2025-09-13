@@ -88,6 +88,15 @@ namespace Acnutech.Analyzers {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Remove redundant Convert.To method.
+        /// </summary>
+        internal static string RedundantConvertCodeFixTitle {
+            get {
+                return ResourceManager.GetString("RedundantConvertCodeFixTitle", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Remove the ref modifier.
         /// </summary>
         internal static string RemoveRefModifierCodeFixTitle {
