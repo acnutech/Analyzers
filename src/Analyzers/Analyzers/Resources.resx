@@ -177,4 +177,15 @@
     <value>Modern C# prefers tuple returns over out parameters for multiple return values. This makes the method signature clearer and allows for inline tuple deconstruction.</value>
     <comment>An optional longer localizable description of the diagnostic.</comment>
   </data>
+  <data name="RedundantConvertDiagnostic_Title" xml:space="preserve">
+    <value>Remove redundant usage of Convert.{0}</value>
+    <comment>{0} - Method name (e.g. ToInt32)</comment>
+  </data>
+  <data name="RedundantConvertDiagnostic_MessageFormat" xml:space="preserve">
+    <value>The call to Convert.{0} is redundant. The argument's type is already {1}</value>
+    <comment>{0} - Method name (e.g. ToInt32), {1} - the type name (e.g. int)</comment>
+  </data>
+  <data name="RedundantConvertDiagnostic_Description" xml:space="preserve">
+    <value>Detects and flags calls to System.Convert.To methods where the argument's type is already the same as the method's return type. Such conversions are redundant and can be safely removed, simplifying the code and slightly improving performance.</value>
+  </data>
 </root>
